@@ -39,6 +39,15 @@ export function createMainWindow(): BrowserWindow {
 		return { action: "deny" };
 	});
 
+	// A link in an article's preview must not carry the window off to the page
+	// it cites: there is no way back from there, the interface is simply gone.
+	// It opens in the real browser instead, as the same link would in Obsidian.
+	window.webContents.on("will-navigate", (event, url) => {
+		if (url === window.webContents.getURL()) return;
+		event.preventDefault();
+		void shell.openExternal(url);
+	});
+
 	if (RENDERER_DEV_URL === undefined) {
 		void window.loadFile(join(import.meta.dirname, "../renderer/index.html"));
 	} else {

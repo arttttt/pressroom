@@ -452,9 +452,179 @@ main {
 	color: var(--quiet);
 }
 
-/* The source, with no cage around it: the page scrolls, and a fixed-height
-   window onto twenty thousand characters is not a way to read anything. */
-.document pre {
+/* A segmented control: three ways of looking at the same document, so they
+   sit together as one thing rather than as three loose buttons. */
+
+.views {
+	display: inline-flex;
+	border: 1px solid var(--edge);
+	border-radius: 5px;
+	overflow: hidden;
+}
+
+.views button {
+	padding: 4px 11px;
+	border: 0;
+	border-left: 1px solid var(--edge);
+	background: var(--paper);
+	color: var(--quiet);
+	font-size: 12px;
+}
+
+.views button:first-child {
+	border-left: 0;
+}
+
+.views button.current {
+	background: var(--card);
+	color: var(--ink);
+}
+
+/*
+ * The preview is the one place in the application meant to be read rather than
+ * scanned, so it is set as prose: a serif at a comfortable size, a measure that
+ * keeps lines short enough to track, and headings that step down clearly
+ * enough to show the shape of the assembly.
+ */
+
+.preview {
+	padding: 18px 16px 24px;
+	max-width: 38em;
+	border-top: 1px solid var(--edge);
+	font-family: var(--editorial);
+	font-size: 15.5px;
+	line-height: 1.62;
+}
+
+.preview > :first-child {
+	margin-top: 0;
+}
+
+.preview h1,
+.preview h2,
+.preview h3,
+.preview h4 {
+	font-weight: 600;
+	line-height: 1.25;
+	letter-spacing: -0.01em;
+}
+
+.preview h1 {
+	margin: 30px 0 10px;
+	font-size: 23px;
+}
+
+.preview h2 {
+	margin: 28px 0 10px;
+	font-size: 19px;
+}
+
+.preview h3 {
+	margin: 22px 0 8px;
+	font-size: 16px;
+}
+
+.preview h4 {
+	margin: 20px 0 6px;
+	font-size: 15px;
+	color: var(--quiet);
+}
+
+.preview p,
+.preview ul,
+.preview ol {
+	margin: 0 0 14px;
+}
+
+.preview ul,
+.preview ol {
+	padding-left: 1.4em;
+}
+
+.preview li {
+	margin-bottom: 5px;
+}
+
+.preview a {
+	color: var(--blue);
+	text-underline-offset: 2px;
+}
+
+.preview strong {
+	font-weight: 640;
+}
+
+.preview blockquote {
+	margin: 0 0 14px;
+	padding-left: 14px;
+	border-left: 2px solid var(--edge);
+	color: var(--quiet);
+}
+
+.preview hr {
+	margin: 24px 0;
+	border: 0;
+	border-top: 1px solid var(--edge);
+}
+
+/* Code keeps the monospace voice, at a size that sits on the prose rather
+   than towering over it. */
+
+.preview code {
+	padding: 1px 4px;
+	border-radius: 3px;
+	background: var(--paper);
+	font-size: 0.82em;
+}
+
+.preview pre {
+	margin: 0 0 16px;
+	padding: 12px 14px;
+	border: 1px solid var(--edge);
+	border-radius: 6px;
+	background: var(--paper);
+	overflow-x: auto;
+	overscroll-behavior: none;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.preview pre code {
+	padding: 0;
+	background: none;
+	font-size: inherit;
+}
+
+.preview table {
+	width: 100%;
+	margin: 0 0 16px;
+	border-collapse: collapse;
+	font-family: var(--body);
+	font-size: 13px;
+}
+
+.preview th,
+.preview td {
+	padding: 7px 10px 7px 0;
+	border-bottom: 1px solid var(--edge);
+	text-align: left;
+	vertical-align: top;
+}
+
+.preview th {
+	font-weight: 600;
+	color: var(--quiet);
+}
+
+/*
+ * The source, with no cage around it: the page scrolls, and a fixed-height
+ * window onto twenty thousand characters is not a way to read anything.
+ *
+ * A direct child, so this cannot reach the code blocks inside a preview — the
+ * two selectors carry the same weight and this one is written later, which is
+ * how it would win.
+ */
+.document > pre {
 	margin: 0;
 	padding: 15px 16px 20px;
 	max-width: 64em;

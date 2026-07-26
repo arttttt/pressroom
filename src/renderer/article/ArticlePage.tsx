@@ -3,6 +3,7 @@ import type { ArticleResult, AssembledDocument } from "../../shared/article-resu
 import type { Target } from "../../shared/platform.js";
 import { Back } from "../Back.js";
 import { Destinations } from "../destinations/Destinations.js";
+import { renderMarkdown } from "../preview/markdown.js";
 
 /**
  * One article: where it can go, and the text to take there.
@@ -68,8 +69,20 @@ export function ArticlePage({
 	);
 }
 
+/**
+ * Three ways of looking at an assembled document, each answering a different
+ * question: is it all there, how will it read, and what exactly gets pasted.
+ */
+type View = "outline" | "preview" | "markdown";
+
+const VIEWS: readonly { readonly id: View; readonly label: string }[] = [
+	{ id: "outline", label: "Outline" },
+	{ id: "preview", label: "Preview" },
+	{ id: "markdown", label: "Markdown" },
+];
+
 function Document({ document }: { readonly document: AssembledDocument }) {
-	const [source, setSource] = useState(false);
+	const [view, setView] = useState<View>("outline");
 	const [copied, setCopied] = useState(false);
 
 	async function copy() {
@@ -88,17 +101,25 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 				<span className="measure">
 					{document.outline.length} sections · {document.body.length.toLocaleString("en")} characters
 				</span>
-				<button type="button" className="btn small" onClick={() => setSource(!source)}>
-					{source ? "Outline" : "Markdown"}
-				</button>
+				<span className="views">
+					{VIEWS.map(({ id, label }) => (
+						<button
+							key={id}
+							type="button"
+							className={view === id ? "current" : ""}
+							aria-pressed={view === id}
+							onClick={() => setView(id)}
+						>
+							{label}
+						</button>
+					))}
+				</span>
 				<button type="button" className="btn small primary" onClick={() => void copy()}>
 					{copied ? "Copied" : "Copy"}
 				</button>
 			</header>
 
-			{source ? (
-				<pre>{document.body}</pre>
-			) : (
+			{view === "outline" && (
 				<ol className="outline">
 					{document.outline.map((entry, position) => (
 						<li key={`${position}-${entry.heading}`}>
@@ -109,6 +130,15 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 					))}
 				</ol>
 			)}
+
+			{view === "preview" && (
+				/* The HTML is produced by a renderer that escapes markup rather than
+				   passing it through, so nothing out of the vault can become an
+				   element here. See renderer/preview/markdown.ts. */
+				<div className="preview" dangerouslySetInnerHTML={{ __html: renderMarkdown(document.body) }} />
+			)}
+
+			{view === "markdown" && <pre>{document.body}</pre>}
 		</section>
 	);
 }
