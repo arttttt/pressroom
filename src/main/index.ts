@@ -1,5 +1,8 @@
+import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
-import { registerPlatformHandlers } from "./ipc/platforms.js";
+import { registerVaultHandlers } from "./ipc/vault.js";
+import { keychainCipher } from "./settings/cipher.js";
+import { SettingsStore } from "./settings/store.js";
 import { createMainWindow } from "./window/main-window.js";
 
 /**
@@ -7,7 +10,11 @@ import { createMainWindow } from "./window/main-window.js";
  * Every decision this file looks like it makes belongs to the module it calls.
  */
 void app.whenReady().then(() => {
-	registerPlatformHandlers();
+	// The keychain is only there once the application is ready, and the settings
+	// path is Electron's to decide — which is why both are built here and handed
+	// down rather than reached for from inside the store.
+	const settings = new SettingsStore(join(app.getPath("userData"), "settings.json"), keychainCipher());
+	registerVaultHandlers(settings);
 	createMainWindow();
 
 	app.on("activate", () => {

@@ -1,11 +1,16 @@
-import type { Platform } from "./platform.js";
+import type { ArticleResult } from "./article-result.js";
+import type { Settings, SettingsUpdate, VaultCheck } from "./settings.js";
 
 /**
  * The channel names, in one place so neither side of the bridge can invent a
  * call the other does not answer.
  */
 export const IPC = {
-	listPlatforms: "platforms:list",
+	readSettings: "settings:read",
+	saveSettings: "settings:save",
+	checkVault: "vault:check",
+	listArticles: "articles:list",
+	readArticle: "articles:read",
 } as const;
 
 /**
@@ -17,5 +22,10 @@ export const IPC = {
  * it: the surface is visible in one file rather than spread across call sites.
  */
 export interface PressroomApi {
-	listPlatforms(): Promise<readonly Platform[]>;
+	readSettings(): Promise<Settings>;
+	saveSettings(update: SettingsUpdate): Promise<Settings>;
+	/** Talks to the vault, which is the only way to know the settings are right. */
+	checkVault(): Promise<VaultCheck>;
+	listArticles(): Promise<readonly string[]>;
+	readArticle(slug: string): Promise<ArticleResult>;
 }

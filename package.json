@@ -1,5 +1,6 @@
 {
   "name": "pressroom",
+  "productName": "Pressroom",
   "version": "0.0.1",
   "private": true,
   "description": "Semi-automatic publishing of long-form articles from an Obsidian vault",

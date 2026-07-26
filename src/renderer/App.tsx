@@ -1,47 +1,33 @@
-import { useEffect, useState } from "react";
-import type { Platform } from "../shared/platform.js";
-import { PlatformList } from "./PlatformList.js";
+import { useState } from "react";
+import { ArticlesView } from "./articles/ArticlesView.js";
+import { SettingsView } from "./settings/SettingsView.js";
 
-/**
- * What the screen can be showing. A union rather than a value beside a flag,
- * so there is no state where both a list and a failure are half-present.
- */
-type Load =
-	| { readonly status: "loading" }
-	| { readonly status: "ready"; readonly platforms: readonly Platform[] }
-	| { readonly status: "failed"; readonly reason: string };
+type Screen = "articles" | "settings";
 
-/**
- * A placeholder, and honest about it: it asks the main process one question and
- * shows the answer. That answer travelling renderer → preload → main → domain
- * and back is the only thing this screen is currently for.
- */
+const SCREENS: readonly { readonly id: Screen; readonly label: string }[] = [
+	{ id: "articles", label: "Articles" },
+	{ id: "settings", label: "Settings" },
+];
+
 export function App() {
-	const [load, setLoad] = useState<Load>({ status: "loading" });
-
-	useEffect(() => {
-		let listening = true;
-		window.pressroom
-			.listPlatforms()
-			.then((platforms) => {
-				if (listening) setLoad({ status: "ready", platforms });
-			})
-			.catch((cause: unknown) => {
-				if (listening) setLoad({ status: "failed", reason: String(cause) });
-			});
-		return () => {
-			listening = false;
-		};
-	}, []);
+	const [screen, setScreen] = useState<Screen>("articles");
 
 	return (
-		<main className="app">
-			<h1>Pressroom</h1>
-			<p className="lede">The shell runs. Nothing is published from here yet.</p>
-
-			{load.status === "loading" && <p className="waiting">Asking the main process…</p>}
-			{load.status === "failed" && <p className="failed">The bridge did not answer: {load.reason}</p>}
-			{load.status === "ready" && <PlatformList platforms={load.platforms} />}
-		</main>
+		<div className="app">
+			<nav>
+				<span className="brand">Pressroom</span>
+				{SCREENS.map(({ id, label }) => (
+					<button
+						key={id}
+						type="button"
+						className={screen === id ? "current" : ""}
+						onClick={() => setScreen(id)}
+					>
+						{label}
+					</button>
+				))}
+			</nav>
+			<main>{screen === "articles" ? <ArticlesView /> : <SettingsView />}</main>
+		</div>
 	);
 }

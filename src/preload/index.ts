@@ -9,7 +9,11 @@ import { IPC, type PressroomApi } from "../shared/ipc.js";
  * side of `invoke`, in the main process.
  */
 const api: PressroomApi = {
-	listPlatforms: () => ipcRenderer.invoke(IPC.listPlatforms),
+	readSettings: () => ipcRenderer.invoke(IPC.readSettings),
+	saveSettings: (update) => ipcRenderer.invoke(IPC.saveSettings, update),
+	checkVault: () => ipcRenderer.invoke(IPC.checkVault),
+	listArticles: () => ipcRenderer.invoke(IPC.listArticles),
+	readArticle: (slug) => ipcRenderer.invoke(IPC.readArticle, slug),
 };
 
 contextBridge.exposeInMainWorld("pressroom", api);

@@ -35,11 +35,16 @@ submits anything on its own.
 
 ## Status
 
-A shell that runs, and nothing beyond it. The window opens and asks the main
-process which platforms exist; that answer crossing renderer → preload → main →
-domain is the whole of what works. None of the publishing described above is
-implemented. The design lives in the `pressroom` project in mnemo; `docs/`
-carries the parts that belong in the repository.
+It reads the vault and assembles articles; it publishes nothing yet. The window
+lists what is in the vault, and opening an article joins its section files into
+one Markdown document ready to be copied. Rendering per platform, the browser
+views, the registry and the metrics are all still to come. The design lives in
+the `pressroom` project in mnemo; `docs/` carries the parts that belong in the
+repository.
+
+Articles must be written in sections — one folder per article, one file per
+section, an index note naming them in order. Articles written as a single note
+are listed but refused, with a message saying so.
 
 ## Running it
 
@@ -48,7 +53,11 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` opens the window with the renderer reloading on save. The rest:
+On first run, open **Settings** and paste the key from Obsidian's Local REST API
+plugin. It is stored encrypted with a key held in the macOS Keychain, and never
+read back into the window. `Save and check` reports whether the vault answered.
+
+The rest:
 
 | command | what it does |
 |---|---|
