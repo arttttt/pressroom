@@ -1,6 +1,28 @@
 import type { Article, Language } from "../../shared/article.js";
 
 /**
+ * An article folder that is not in the layout below.
+ *
+ * The vault still holds articles written before that layout existed — a single
+ * note per language, with no sections. Those are not converted on the fly:
+ * guessing at a structure the author has not written produces something that
+ * looks right and is not. They are listed like any other article and refused
+ * with this when read, which is a prompt to split them rather than a failure to
+ * hide. Distinct from a transport error so a caller can tell "this article is
+ * not ready" from "Obsidian is not answering".
+ */
+export class UnsupportedArticleLayout extends Error {
+	constructor(
+		readonly slug: string,
+		readonly language: Language,
+		message: string,
+	) {
+		super(message);
+		this.name = "UnsupportedArticleLayout";
+	}
+}
+
+/**
  * Reads articles out of the Obsidian vault, and writes the publication record
  * back into it.
  *
