@@ -1,17 +1,56 @@
+/*
+ * Pressroom reads as a composing room rather than a document viewer: the wire
+ * voice is monospace and set in small caps for anything structural — slugs,
+ * platform names, counts — while prose stays in the system face and an article's
+ * own title, the one piece of real editorial matter on screen, is set in a
+ * serif. The accent is the blue printers mark up layout with, the one a camera
+ * does not pick up.
+ */
+
 :root {
 	color-scheme: light dark;
-	font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+
+	--paper: light-dark(#eceeef, #12141a);
+	--card: light-dark(#f7f8f8, #181b22);
+	--ink: light-dark(#171a21, #e6e8ec);
+	--quiet: light-dark(#6a7079, #8b929d);
+	--rule: light-dark(#d3d7db, #262a33);
+	--blue: light-dark(#2f62b0, #6f9de4);
+	--amber: light-dark(#8a5d17, #d3a25a);
+
+	--wire: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+	--body: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+	--editorial: ui-serif, "New York", Georgia, serif;
+
+	font-family: var(--body);
 	font-size: 13px;
-	--edge: light-dark(#e2e0dc, #2c2a28);
-	--muted: light-dark(#6b6864, #96918a);
-	--raised: light-dark(#ffffff, #201f1e);
-	--accent: light-dark(#1b1a19, #eceae7);
+	line-height: 1.5;
+}
+
+html,
+body {
+	/* No rubber-banding: this is an application window, not a page, and the
+	   bounce reveals the empty area behind it whenever a list is short. */
+	overscroll-behavior: none;
+	height: 100%;
 }
 
 body {
 	margin: 0;
-	background: light-dark(#faf9f7, #171615);
-	color: light-dark(#1b1a19, #eceae7);
+	background: var(--paper);
+	color: var(--ink);
+	-webkit-font-smoothing: antialiased;
+	overflow: hidden;
+}
+
+button {
+	font: inherit;
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 2px;
 }
 
 .app {
@@ -20,180 +59,453 @@ body {
 	height: 100vh;
 }
 
-nav {
+.quiet {
+	color: var(--quiet);
+}
+
+.pad {
+	padding: 28px 32px;
+}
+
+/* The wire voice: everything structural. */
+
+.chrome .wordmark,
+.desk th,
+.mark + *,
+.tag,
+.lang,
+.field,
+.measure,
+.legend,
+.back {
+	font-family: var(--wire);
+	font-size: 10.5px;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+}
+
+/* Chrome */
+
+.chrome {
 	display: flex;
 	align-items: center;
-	gap: 4px;
 	/* Room for the inset traffic lights, which sit over the content. */
-	padding: 8px 12px 8px 88px;
-	border-bottom: 1px solid var(--edge);
+	padding: 0 16px 0 92px;
+	height: 38px;
+	border-bottom: 1px solid var(--rule);
 	-webkit-app-region: drag;
 }
 
-nav .brand {
-	margin-right: 12px;
+.chrome .wordmark {
 	font-weight: 600;
+	letter-spacing: 0.18em;
 }
 
-nav button {
+.chrome .link {
 	-webkit-app-region: no-drag;
-	padding: 4px 10px;
+	margin-left: auto;
+	padding: 3px 2px;
 	border: 0;
-	border-radius: 6px;
-	background: transparent;
-	color: var(--muted);
-	font: inherit;
+	background: none;
+	color: var(--quiet);
+	font-family: var(--wire);
+	font-size: 10.5px;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
 }
 
-nav button.current {
-	background: var(--raised);
-	color: var(--accent);
-	box-shadow: 0 0 0 1px var(--edge);
+.chrome .link:hover,
+.chrome .link.current {
+	color: var(--ink);
 }
 
 main {
 	flex: 1;
 	min-height: 0;
 	overflow: auto;
+	overscroll-behavior: none;
 }
 
-.lede,
-.waiting,
-.note {
-	color: var(--muted);
+/* The desk: articles against the places they can go. */
+
+.desk {
+	padding: 22px 32px 40px;
 }
 
-.failed {
-	color: light-dark(#a8322a, #f08379);
-}
-
-.ok {
-	color: light-dark(#2c6e49, #7fc79a);
-}
-
-/* Articles */
-
-.articles {
-	display: grid;
-	grid-template-columns: 260px 1fr;
-	height: 100%;
-}
-
-.articles .list {
-	margin: 0;
-	padding: 8px;
-	list-style: none;
-	border-right: 1px solid var(--edge);
-	overflow: auto;
-}
-
-.articles .list button {
-	display: block;
+.desk table {
 	width: 100%;
-	padding: 7px 9px;
-	border: 0;
-	border-radius: 6px;
-	background: transparent;
-	color: inherit;
-	font: inherit;
+	border-collapse: collapse;
+}
+
+.desk thead th {
+	padding: 0 0 10px;
+	color: var(--quiet);
+	font-weight: 500;
+	text-align: center;
+	vertical-align: bottom;
+	border-bottom: 1px solid var(--rule);
+}
+
+.desk thead th.slug {
+	text-align: left;
+	width: 46%;
+}
+
+.desk thead th.target .name {
+	display: block;
+	letter-spacing: 0.06em;
+}
+
+.desk thead th.target .lang {
+	display: block;
+	margin-top: 3px;
+	color: var(--blue);
+	font-size: 9.5px;
+}
+
+.desk tbody tr {
+	border-bottom: 1px solid var(--rule);
+	cursor: default;
+}
+
+.desk tbody tr:hover {
+	background: var(--card);
+}
+
+.desk tbody th.slug {
+	padding: 11px 16px 11px 0;
+	font-weight: 400;
 	text-align: left;
 }
 
-.articles .list button.current {
-	background: var(--raised);
-	box-shadow: 0 0 0 1px var(--edge);
+.desk tbody th.slug .title {
+	font-family: var(--body);
+	font-size: 13px;
+	letter-spacing: 0;
+	text-transform: none;
 }
 
-.articles .detail {
-	padding: 20px 24px;
-	overflow: auto;
+.desk tbody tr.waiting th.slug .title {
+	color: var(--quiet);
 }
+
+.desk td {
+	text-align: center;
+	padding: 11px 0;
+}
+
+.tag {
+	margin-left: 9px;
+	padding: 1px 5px;
+	border: 1px solid var(--rule);
+	border-radius: 3px;
+	color: var(--amber);
+	font-size: 9px;
+	white-space: nowrap;
+}
+
+/* The mark carries state by shape as well as colour: a filled square where
+   there is text to send, a hollow ring where the language is missing. */
+
+.mark {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	vertical-align: middle;
+}
+
+.mark.ready {
+	background: var(--blue);
+}
+
+.mark.missing {
+	border: 1px solid var(--rule);
+	border-radius: 50%;
+}
+
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	margin: 18px 0 0;
+	color: var(--quiet);
+}
+
+.legend .mark {
+	margin-left: 12px;
+}
+
+.legend .mark:first-child {
+	margin-left: 0;
+}
+
+.legend .spacer {
+	flex: 1;
+}
+
+/* Empty and failed states are directions, not apologies. */
+
+.empty {
+	max-width: 42em;
+}
+
+.notice {
+	margin: 0 0 4px;
+	font-size: 15px;
+}
+
+.empty .btn {
+	margin-top: 14px;
+}
+
+/* One article */
+
+.article {
+	padding: 22px 32px 60px;
+	max-width: 62em;
+}
+
+.back {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--quiet);
+}
+
+.back::before {
+	content: "← ";
+}
+
+.back:hover {
+	color: var(--ink);
+}
+
+.article h1 {
+	margin: 18px 0 22px;
+	font-family: var(--editorial);
+	font-size: 30px;
+	font-weight: 500;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
+	max-width: 20em;
+}
+
+.article h2 {
+	margin: 0 0 10px;
+	font-family: var(--wire);
+	font-size: 10.5px;
+	font-weight: 500;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	color: var(--quiet);
+}
+
+.targets ul {
+	margin: 0 0 30px;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--rule);
+}
+
+.targets li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 0;
+	border-bottom: 1px solid var(--rule);
+}
+
+.targets li.missing .name,
+.targets li.missing .how {
+	color: var(--quiet);
+}
+
+.targets .name {
+	font-family: var(--body);
+	font-size: 13px;
+	letter-spacing: 0;
+	text-transform: none;
+	min-width: 9em;
+}
+
+.targets .lang {
+	color: var(--blue);
+}
+
+.targets li.missing .lang {
+	color: var(--quiet);
+}
+
+.targets .how {
+	margin-left: auto;
+	color: var(--quiet);
+}
+
+/* Assembled documents */
 
 .document {
-	margin: 16px 0;
-	border: 1px solid var(--edge);
-	border-radius: 8px;
-	overflow: hidden;
+	margin: 0 0 16px;
+	border: 1px solid var(--rule);
+	border-radius: 5px;
+	background: var(--card);
 }
 
 .document header {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: 10px;
-	padding: 8px 12px;
-	background: var(--raised);
-	border-bottom: 1px solid var(--edge);
+	padding: 9px 12px;
+	border-bottom: 1px solid var(--rule);
 }
 
-.document .language {
+.document .lang {
+	color: var(--blue);
 	font-weight: 600;
-	text-transform: uppercase;
-	font-size: 0.85em;
 }
 
-.document .count {
+.document .measure {
+	color: var(--quiet);
+}
+
+.document header .btn:first-of-type {
 	margin-left: auto;
-	color: var(--muted);
+}
+
+.document .headline {
+	margin: 0;
+	padding: 14px 14px 16px;
+	font-family: var(--editorial);
+	font-size: 17px;
+	line-height: 1.35;
+}
+
+.document .field {
+	padding: 13px 14px 0;
+	margin: 0;
 }
 
 .document pre {
 	margin: 0;
-	padding: 12px;
-	max-height: 320px;
+	padding: 0 14px 16px;
+	max-height: 340px;
 	overflow: auto;
+	overscroll-behavior: none;
 	white-space: pre-wrap;
-	font-family: ui-monospace, "SF Mono", Menlo, monospace;
-	font-size: 0.92em;
+	font-family: var(--wire);
+	font-size: 11.5px;
+	line-height: 1.65;
+	color: var(--quiet);
+	border-top: 1px solid var(--rule);
+	padding-top: 14px;
+	margin-top: 14px;
 }
 
 /* Settings */
 
 .settings {
-	padding: 20px 24px;
-	max-width: 560px;
+	padding: 22px 32px 40px;
+	max-width: 34em;
 }
 
-.settings h2 {
-	margin: 0 0 6px;
+.settings h1 {
+	margin: 0 0 8px;
+	font-family: var(--editorial);
+	font-size: 24px;
+	font-weight: 500;
+}
+
+.standfirst {
+	margin: 0 0 26px;
+	max-width: 44em;
 }
 
 .settings label {
 	display: block;
-	margin: 14px 0 4px;
+	margin-bottom: 14px;
 }
 
-.settings label span {
+.field {
 	display: block;
-	margin-bottom: 4px;
-	color: var(--muted);
+	margin-bottom: 5px;
+	color: var(--quiet);
 }
 
 .settings input {
 	width: 100%;
-	padding: 6px 8px;
-	border: 1px solid var(--edge);
-	border-radius: 6px;
-	background: var(--raised);
+	padding: 7px 9px;
+	border: 1px solid var(--rule);
+	border-radius: 4px;
+	background: var(--card);
 	color: inherit;
-	font: inherit;
+	font-family: var(--wire);
+	font-size: 12px;
+	box-sizing: border-box;
+}
+
+.settings input:focus {
+	border-color: var(--blue);
+}
+
+.hint {
+	margin: -6px 0 20px;
 }
 
 .actions {
 	display: flex;
 	gap: 8px;
-	margin: 16px 0;
 }
 
-.actions button,
-.document button {
-	padding: 5px 12px;
-	border: 1px solid var(--edge);
-	border-radius: 6px;
-	background: var(--raised);
-	color: inherit;
-	font: inherit;
+/*
+ * Buttons are styled by class and never by where they sit, so that a
+ * container's rule cannot outweigh `.primary` and leave dark text on a dark
+ * fill — which is exactly what a `.document header button` rule did.
+ */
+
+.btn {
+	padding: 6px 14px;
+	border: 1px solid var(--rule);
+	border-radius: 4px;
+	background: var(--card);
+}
+
+.btn:hover {
+	border-color: var(--quiet);
+}
+
+.btn.primary {
+	border-color: transparent;
+	background: var(--blue);
+	color: light-dark(#ffffff, #0d1017);
+	font-weight: 500;
+}
+
+.btn.primary:hover {
+	filter: brightness(1.08);
+}
+
+.btn.small {
+	padding: 3px 10px;
 }
 
 button:disabled {
-	opacity: 0.5;
+	opacity: 0.45;
+}
+
+.result {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 18px;
+}
+
+.result.bad {
+	color: var(--amber);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.desk tbody tr,
+	.chrome .link,
+	.back {
+		transition: background-color 120ms ease, color 120ms ease;
+	}
 }

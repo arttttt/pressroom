@@ -1,33 +1,44 @@
 import { useState } from "react";
-import { ArticlesView } from "./articles/ArticlesView.js";
+import type { Target } from "../shared/platform.js";
+import { ArticlePage } from "./article/ArticlePage.js";
+import { DeskView } from "./desk/DeskView.js";
 import { SettingsView } from "./settings/SettingsView.js";
 
-type Screen = "articles" | "settings";
-
-const SCREENS: readonly { readonly id: Screen; readonly label: string }[] = [
-	{ id: "articles", label: "Articles" },
-	{ id: "settings", label: "Settings" },
-];
+type Screen =
+	| { readonly name: "desk" }
+	// The desk has already worked out where this article can go, so it hands
+	// that over rather than making the article page ask again.
+	| { readonly name: "article"; readonly slug: string; readonly targets: readonly Target[] }
+	| { readonly name: "settings" };
 
 export function App() {
-	const [screen, setScreen] = useState<Screen>("articles");
+	const [screen, setScreen] = useState<Screen>({ name: "desk" });
 
 	return (
 		<div className="app">
-			<nav>
-				<span className="brand">Pressroom</span>
-				{SCREENS.map(({ id, label }) => (
-					<button
-						key={id}
-						type="button"
-						className={screen === id ? "current" : ""}
-						onClick={() => setScreen(id)}
-					>
-						{label}
-					</button>
-				))}
-			</nav>
-			<main>{screen === "articles" ? <ArticlesView /> : <SettingsView />}</main>
+			<header className="chrome">
+				<span className="wordmark">Pressroom</span>
+				<button
+					type="button"
+					className={screen.name === "settings" ? "link current" : "link"}
+					onClick={() => setScreen(screen.name === "settings" ? { name: "desk" } : { name: "settings" })}
+				>
+					{screen.name === "settings" ? "Done" : "Settings"}
+				</button>
+			</header>
+
+			<main>
+				{screen.name === "desk" && (
+					<DeskView
+						onOpen={(slug, targets) => setScreen({ name: "article", slug, targets })}
+						onSettings={() => setScreen({ name: "settings" })}
+					/>
+				)}
+				{screen.name === "article" && (
+					<ArticlePage slug={screen.slug} targets={screen.targets} onBack={() => setScreen({ name: "desk" })} />
+				)}
+				{screen.name === "settings" && <SettingsView />}
+			</main>
 		</div>
 	);
 }
