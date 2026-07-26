@@ -288,6 +288,12 @@ main {
 	list-style: none;
 }
 
+/* The chosen row is a filled box, so the rows need air between them or its
+   edge sits against the next row's text. */
+.article-aside li + li {
+	margin-top: 3px;
+}
+
 .article-aside button {
 	display: flex;
 	align-items: baseline;
