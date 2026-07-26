@@ -1,6 +1,8 @@
 import type { ArticleResult } from "./article-result.js";
 import type { ArticleSummary } from "./article-summary.js";
+import type { Language } from "./article.js";
 import type { PlatformId } from "./platform.js";
+import type { Publication } from "./publication.js";
 import type { RenderResult } from "./rendered.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "./settings.js";
 
@@ -15,6 +17,9 @@ export const IPC = {
 	listArticles: "articles:list",
 	readArticle: "articles:read",
 	renderArticle: "articles:render",
+	listPublications: "publications:list",
+	recordPublication: "publications:record",
+	forgetPublication: "publications:forget",
 } as const;
 
 /**
@@ -34,4 +39,13 @@ export interface PressroomApi {
 	readArticle(slug: string): Promise<ArticleResult>;
 	/** The same article as one platform will be handed it. */
 	renderArticle(slug: string, platform: PlatformId): Promise<RenderResult>;
+
+	listPublications(slug: string): Promise<readonly Publication[]>;
+	/** Answers with the record as it stands afterwards. */
+	recordPublication(slug: string, publication: Publication): Promise<readonly Publication[]>;
+	forgetPublication(
+		slug: string,
+		platform: PlatformId,
+		language: Language,
+	): Promise<readonly Publication[]>;
 }

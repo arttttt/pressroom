@@ -1,6 +1,13 @@
 import type { StoredSettings } from "../settings/store.js";
+import { ObsidianPublicationRegistry } from "./obsidian-registry.js";
 import { ObsidianVaultReader } from "./obsidian-vault-reader.js";
 import { fetchPluginCertificate, ObsidianRestClient } from "./rest-client.js";
+
+/** Everything the vault is reached for, over one connection to the plugin. */
+export interface Vault {
+	readonly reader: ObsidianVaultReader;
+	readonly registry: ObsidianPublicationRegistry;
+}
 
 /**
  * One certificate per address, for as long as the application runs.
@@ -17,7 +24,7 @@ const certificates = new Map<string, Promise<string>>();
  * There is no reader without an API key, and saying so here means every caller
  * gets the same sentence rather than each inventing its own.
  */
-export async function connectToVault(settings: StoredSettings): Promise<ObsidianVaultReader> {
+export async function connectToVault(settings: StoredSettings): Promise<Vault> {
 	if (settings.apiKey === null) {
 		throw new Error("No API key is set. Enter the one from Obsidian's Local REST API settings.");
 	}
@@ -28,7 +35,7 @@ export async function connectToVault(settings: StoredSettings): Promise<Obsidian
 		apiKey: settings.apiKey,
 		...(new URL(baseUrl).protocol === "https:" ? { certificate: await certificateFor(baseUrl) } : {}),
 	});
-	return new ObsidianVaultReader(client);
+	return { reader: new ObsidianVaultReader(client), registry: new ObsidianPublicationRegistry(client) };
 }
 
 /**

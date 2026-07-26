@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { Target } from "../../shared/platform.js";
+import type { Publication } from "../../shared/publication.js";
 import { Back } from "../Back.js";
-import { Destinations } from "../destinations/Destinations.js";
+import { ArticleDestinations } from "./ArticleDestinations.js";
 import { BodyViews } from "./BodyViews.js";
 import { PlatformPanel } from "./PlatformPanel.js";
+import { localDate } from "./today.js";
 
 /**
  * One article: where it can go, and the text to take there.
@@ -25,6 +27,9 @@ export function ArticlePage({
 }) {
 	const [result, setResult] = useState<ArticleResult | null>(null);
 	const [showing, setShowing] = useState<Target | null>(null);
+	// Where it has gone. Held here rather than taken from the desk's summary,
+	// because recording one changes it and the page has to show that at once.
+	const [here, setHere] = useState<readonly Target[]>(targets);
 	// Same reason as on the desk: Obsidian may have come back since.
 	const [attempt, setAttempt] = useState(0);
 
@@ -32,11 +37,23 @@ export function ArticlePage({
 		let listening = true;
 		setResult(null);
 		setShowing(null);
+		setHere(targets);
 		void window.pressroom.readArticle(slug).then((read) => listening && setResult(read));
 		return () => {
 			listening = false;
 		};
-	}, [slug, attempt]);
+	}, [slug, attempt, targets]);
+
+	/** The record decides what is canonical, so the answer replaces what we had. */
+	function applied(publications: readonly Publication[]): readonly Target[] {
+		return here.map((target) => {
+			const out = publications.find(
+				(publication) => publication.platform === target.platform && publication.language === target.language,
+			);
+			if (out !== undefined) return { ...target, state: "published" as const, url: out.url };
+			return target.state === "published" ? { ...target, state: "ready" as const, url: null } : target;
+		});
+	}
 
 	return (
 		<article className="article">
@@ -71,11 +88,15 @@ export function ArticlePage({
 			{result?.kind === "ready" && (
 				<>
 					<h1>{result.title}</h1>
-					<Destinations
-						targets={targets}
-						detailed
-						onOpen={(target) => setShowing(showing?.platform === target.platform ? null : target)}
+					<ArticleDestinations
+						targets={here}
 						opened={showing?.platform ?? null}
+						onOpen={(target) => setShowing(showing?.platform === target.platform ? null : target)}
+						today={localDate(new Date())}
+						onRecord={async (publication) => setHere(applied(await window.pressroom.recordPublication(slug, publication)))}
+						onForget={async (target) =>
+							setHere(applied(await window.pressroom.forgetPublication(slug, target.platform, target.language)))
+						}
 					/>
 
 					{showing !== null && (

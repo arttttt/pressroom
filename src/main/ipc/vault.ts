@@ -5,7 +5,9 @@ import { renderFor } from "../../domain/render/renderers.js";
 import { UnsupportedArticleLayout } from "../../domain/vault/reader.js";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { ArticleSummary } from "../../shared/article-summary.js";
+import type { Language } from "../../shared/article.js";
 import type { PlatformId } from "../../shared/platform.js";
+import type { Publication } from "../../shared/publication.js";
 import type { RenderResult } from "../../shared/rendered.js";
 import { IPC } from "../../shared/ipc.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "../../shared/settings.js";
@@ -23,6 +25,7 @@ import { connectToVault, forgetVaultConnection } from "../vault/connect.js";
  */
 export function registerVaultHandlers(settings: SettingsStore): void {
 	registerRender(settings);
+	registerPublications(settings);
 
 	ipcMain.handle(IPC.readSettings, async (): Promise<Settings> => visible(await settings.read()));
 
@@ -33,7 +36,7 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 
 	ipcMain.handle(IPC.checkVault, async (): Promise<VaultCheck> => {
 		try {
-			const reader = await connectToVault(await settings.read());
+			const { reader } = await connectToVault(await settings.read());
 			return { kind: "reachable", articles: (await reader.listArticles()).length };
 		} catch (cause) {
 			forgetVaultConnection();
@@ -42,19 +45,20 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 	});
 
 	ipcMain.handle(IPC.listArticles, async (): Promise<readonly ArticleSummary[]> => {
-		const reader = await connectToVault(await settings.read()).catch(startOver);
+		const { reader, registry } = await connectToVault(await settings.read()).catch(startOver);
 		const slugs = await reader.listArticles().catch(startOver);
 		return Promise.all(
 			slugs.map(async (slug): Promise<ArticleSummary> => {
-				const [present, ready] = await Promise.all([
+				const [present, ready, published] = await Promise.all([
 					reader.availableLanguages(slug),
 					reader.splitLanguages(slug),
+					registry.list(slug),
 				]);
 				return {
 					slug,
 					ready,
 					unsplit: present.filter((language) => !ready.includes(language)),
-					targets: targetsFor(ready),
+					targets: targetsFor(ready, published),
 				};
 			}),
 		);
@@ -62,7 +66,7 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 
 	ipcMain.handle(IPC.readArticle, async (_event, slug: string): Promise<ArticleResult> => {
 		try {
-			const reader = await connectToVault(await settings.read());
+			const { reader } = await connectToVault(await settings.read());
 			const article = await reader.readArticle(slug);
 			const documents: AssembledDocument[] = article.documents.map((document) => {
 				const assembled = assembleMarkdown(document);
@@ -89,13 +93,43 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 	});
 }
 
+/**
+ * Where an article has already gone.
+ *
+ * The record lives in the vault beside the article, so recording is a write
+ * through the plugin like every read — and the answer is the record as it now
+ * stands, which the interface needs anyway.
+ */
+function registerPublications(settings: SettingsStore): void {
+	ipcMain.handle(IPC.listPublications, async (_event, slug: string): Promise<readonly Publication[]> => {
+		const { registry } = await connectToVault(await settings.read()).catch(startOver);
+		return registry.list(slug).catch(startOver);
+	});
+
+	ipcMain.handle(
+		IPC.recordPublication,
+		async (_event, slug: string, publication: Publication): Promise<readonly Publication[]> => {
+			const { registry } = await connectToVault(await settings.read()).catch(startOver);
+			return registry.record(slug, publication).catch(startOver);
+		},
+	);
+
+	ipcMain.handle(
+		IPC.forgetPublication,
+		async (_event, slug: string, platform: PlatformId, language: Language): Promise<readonly Publication[]> => {
+			const { registry } = await connectToVault(await settings.read()).catch(startOver);
+			return registry.forget(slug, platform, language).catch(startOver);
+		},
+	);
+}
+
 /** The same article, as one platform will be handed it. */
 function registerRender(settings: SettingsStore): void {
 	ipcMain.handle(
 		IPC.renderArticle,
 		async (_event, slug: string, platform: PlatformId): Promise<RenderResult> => {
 			try {
-				const reader = await connectToVault(await settings.read());
+				const { reader } = await connectToVault(await settings.read());
 				return renderFor(await reader.readArticle(slug), platform);
 			} catch (cause) {
 				if (cause instanceof UnsupportedArticleLayout) {

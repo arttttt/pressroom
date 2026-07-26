@@ -32,7 +32,7 @@ describe("connectToVault", () => {
 
 	it("builds a reader that talks to the address it was given", async () => {
 		const baseUrl = await vaultServing(["An Article/"]);
-		const reader = await connectToVault({ baseUrl, apiKey: "test-key" });
+		const { reader } = await connectToVault({ baseUrl, apiKey: "test-key" });
 		expect(await reader.listArticles()).toEqual(["An Article"]);
 	});
 
@@ -45,7 +45,14 @@ describe("connectToVault", () => {
 
 	it("tolerates a trailing slash on the address someone typed", async () => {
 		const baseUrl = await vaultServing(["An Article/"]);
-		const reader = await connectToVault({ baseUrl: `${baseUrl}/`, apiKey: "test-key" });
+		const { reader } = await connectToVault({ baseUrl: `${baseUrl}/`, apiKey: "test-key" });
 		expect(await reader.listArticles()).toEqual(["An Article"]);
+	});
+
+	it("gives the reader and the record over one connection to the plugin", async () => {
+		const baseUrl = await vaultServing([]);
+		const vault = await connectToVault({ baseUrl, apiKey: "test-key" });
+		expect(vault.reader).toBeDefined();
+		expect(vault.registry).toBeDefined();
 	});
 });

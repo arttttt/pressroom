@@ -10,6 +10,15 @@ export interface VaultHttp {
 	/** Entry names in a folder; a trailing `/` marks a folder. */
 	listDirectory(path: string): Promise<readonly string[]>;
 	readFile(path: string): Promise<string>;
+	/**
+	 * Writes a note, creating it if it is not there.
+	 *
+	 * The only thing Pressroom writes, and it goes through the plugin like
+	 * everything else — which is the point of reaching the vault this way.
+	 * Obsidian stays the one process touching its own files, so the note is not
+	 * changed under an open editor or raced with the folder's syncing.
+	 */
+	writeFile(path: string, contents: string): Promise<void>;
 }
 
 export interface ObsidianRestConfig {
@@ -32,7 +41,7 @@ export class ObsidianRestClient implements VaultHttp {
 
 	async listDirectory(path: string): Promise<readonly string[]> {
 		const withSlash = path.endsWith("/") ? path : `${path}/`;
-		const body = await this.get(withSlash, "application/json");
+		const body = await this.send("GET", withSlash, { Accept: "application/json" });
 		const parsed: unknown = JSON.parse(body);
 		const files = (parsed as { files?: unknown }).files;
 		if (!Array.isArray(files)) {
@@ -42,19 +51,33 @@ export class ObsidianRestClient implements VaultHttp {
 	}
 
 	readFile(path: string): Promise<string> {
-		return this.get(path, "text/markdown");
+		return this.send("GET", path, { Accept: "text/markdown" });
 	}
 
-	private get(path: string, accept: string): Promise<string> {
+	async writeFile(path: string, contents: string): Promise<void> {
+		await this.send("PUT", path, { "Content-Type": "text/markdown; charset=utf-8" }, contents);
+	}
+
+	private send(
+		method: string,
+		path: string,
+		headers: Readonly<Record<string, string>>,
+		body?: string,
+	): Promise<string> {
 		const url = new URL(`${this.config.baseUrl.replace(/\/$/, "")}/vault/${encodePath(path)}`);
 		const send = url.protocol === "https:" ? httpsRequest : httpRequest;
+		const payload = body === undefined ? undefined : Buffer.from(body, "utf8");
 
 		return new Promise((resolve, reject) => {
 			const call = send(
 				url,
 				{
-					method: "GET",
-					headers: { Authorization: `Bearer ${this.config.apiKey}`, Accept: accept },
+					method,
+					headers: {
+						Authorization: `Bearer ${this.config.apiKey}`,
+						...headers,
+						...(payload === undefined ? {} : { "Content-Length": String(payload.byteLength) }),
+					},
 					...(this.config.certificate === undefined ? {} : { ca: this.config.certificate }),
 				},
 				(response) => {
@@ -69,7 +92,7 @@ export class ObsidianRestClient implements VaultHttp {
 				},
 			);
 			call.on("error", (cause: NodeJS.ErrnoException) => reject(new Error(describeTransport(cause, url))));
-			call.end();
+			call.end(payload);
 		});
 	}
 }

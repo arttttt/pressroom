@@ -1,30 +1,45 @@
 import type { Language } from "../../shared/article.js";
 import type { Target } from "../../shared/platform.js";
+import type { Publication } from "../../shared/publication.js";
 import { PLATFORMS } from "./registry.js";
 
 /**
- * Where an article could go, given the languages it has been written in.
+ * Where an article could go, what is written for each place, and where it has
+ * already gone.
  *
- * Every platform appears whether or not the text exists, because the gap is the
- * point: an article with no Russian has nothing for Habr, and that is worth
- * seeing rather than hiding. Once publications are recorded, the third state —
- * already sent — belongs here.
+ * Every platform appears whether or not the text exists, because the gap is
+ * the point: an article with no Russian has nothing for Habr, and that is
+ * worth seeing rather than hiding.
  */
-export function targetsFor(written: readonly Language[]): readonly Target[] {
+export function targetsFor(
+	written: readonly Language[],
+	published: readonly Publication[] = [],
+): readonly Target[] {
 	return PLATFORMS.flatMap((platform) =>
-		platform.languages.map(
-			(language): Target => ({
+		platform.languages.map((language): Target => {
+			const out = published.find(
+				(publication) => publication.platform === platform.id && publication.language === language,
+			);
+			return {
 				platform: platform.id,
 				displayName: platform.displayName,
 				language,
 				delivery: platform.delivery.kind,
-				state: written.includes(language) ? "ready" : "missing",
-			}),
-		),
+				// Having gone out is the fact about a destination, whatever the
+				// text now says — an article can be edited after it is published.
+				state: out !== undefined ? "published" : written.includes(language) ? "ready" : "missing",
+				url: out?.url ?? null,
+			};
+		}),
 	);
 }
 
-/** How many of an article's targets have text waiting for them. */
+/** How many of an article's destinations have text waiting for them. */
 export function readyCount(targets: readonly Target[]): number {
 	return targets.filter((target) => target.state === "ready").length;
+}
+
+/** How many it has already gone out to. */
+export function publishedCount(targets: readonly Target[]): number {
+	return targets.filter((target) => target.state === "published").length;
 }

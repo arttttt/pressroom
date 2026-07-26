@@ -38,11 +38,20 @@ export interface Platform {
  * A platform takes one language — Habr Russian, the rest English — so a target
  * is a platform and that language together, not a platform on its own.
  */
+/**
+ * What has become of one destination.
+ *
+ * `published` wins over the other two: once an article is out somewhere, that
+ * is the fact about that destination, whatever the text says.
+ */
+export type TargetState = "published" | "ready" | "missing";
+
 export interface Target {
 	readonly platform: PlatformId;
 	readonly displayName: string;
 	readonly language: "en" | "ru";
 	readonly delivery: Delivery["kind"];
-	/** `ready` when the article has text in that language, `missing` when it does not. */
-	readonly state: "ready" | "missing";
+	readonly state: TargetState;
+	/** Where it went, once it has gone. */
+	readonly url: string | null;
 }

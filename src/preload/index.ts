@@ -15,6 +15,10 @@ const api: PressroomApi = {
 	listArticles: () => ipcRenderer.invoke(IPC.listArticles),
 	readArticle: (slug) => ipcRenderer.invoke(IPC.readArticle, slug),
 	renderArticle: (slug, platform) => ipcRenderer.invoke(IPC.renderArticle, slug, platform),
+	listPublications: (slug) => ipcRenderer.invoke(IPC.listPublications, slug),
+	recordPublication: (slug, publication) => ipcRenderer.invoke(IPC.recordPublication, slug, publication),
+	forgetPublication: (slug, platform, language) =>
+		ipcRenderer.invoke(IPC.forgetPublication, slug, platform, language),
 };
 
 contextBridge.exposeInMainWorld("pressroom", api);
