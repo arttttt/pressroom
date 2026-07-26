@@ -3,17 +3,18 @@ import type { ArticleResult, AssembledDocument } from "../../shared/article-resu
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
 import { Back } from "../Back.js";
-import { ArticleDestinations } from "./ArticleDestinations.js";
+import { ArticleAside, type Chosen } from "./ArticleAside.js";
 import { BodyViews } from "./BodyViews.js";
+import { DestinationPanel } from "./DestinationPanel.js";
 import { localDate } from "./today.js";
 
 /**
- * One article: where it can go, and the text to take there.
+ * One article: its text, and every place it can go.
  *
- * State first, prose second. The author wrote the text and can read it in
- * Obsidian; what they cannot see there is which of the five places it is ready
- * for, whether the assembly came out whole, and what each platform will
- * actually receive once its dialect has been applied.
+ * A list beside what it selects rather than a stack that expands. Rows that
+ * open push everything under them down the page, so the list reflows at every
+ * click and the detail ends up buried in the list that was meant to stay
+ * scannable — which is what this replaced.
  */
 export function ArticlePage({
 	slug,
@@ -28,12 +29,14 @@ export function ArticlePage({
 	// Where it has gone. Held here rather than taken from the desk's summary,
 	// because recording one changes it and the page has to show that at once.
 	const [here, setHere] = useState<readonly Target[]>(targets);
+	const [chosen, setChosen] = useState<Chosen | null>(null);
 	// Same reason as on the desk: Obsidian may have come back since.
 	const [attempt, setAttempt] = useState(0);
 
 	useEffect(() => {
 		let listening = true;
 		setResult(null);
+		setChosen(null);
 		setHere(targets);
 		void window.pressroom.readArticle(slug).then((read) => listening && setResult(read));
 		return () => {
@@ -51,6 +54,13 @@ export function ArticlePage({
 			return target.state === "published" ? { ...target, state: "ready" as const, url: null } : target;
 		});
 	}
+
+	const documents = result?.kind === "ready" ? result.documents : [];
+	// The article's own language opens first: it is the thing itself, and every
+	// destination is a version of it.
+	const showing = chosen ?? (documents[0] === undefined ? null : { kind: "document" as const, language: documents[0].language });
+	const document = showing?.kind === "document" ? documents.find((entry) => entry.language === showing.language) : undefined;
+	const target = showing?.kind === "destination" ? here.find((entry) => entry.platform === showing.target.platform) : undefined;
 
 	return (
 		<article className="article">
@@ -82,22 +92,37 @@ export function ArticlePage({
 				</>
 			)}
 
-			{result?.kind === "ready" && (
+			{result?.kind === "ready" && showing !== null && (
 				<>
 					<h1>{result.title}</h1>
-					<ArticleDestinations
-						slug={slug}
-						targets={here}
-						today={localDate(new Date())}
-						onRecord={async (publication) => setHere(applied(await window.pressroom.recordPublication(slug, publication)))}
-						onForget={async (target) =>
-							setHere(applied(await window.pressroom.forgetPublication(slug, target.platform, target.language)))
-						}
-					/>
-
-					{result.documents.map((document) => (
-						<Document key={document.language} document={document} />
-					))}
+					<div className="article-body">
+						<ArticleAside
+							documents={documents}
+							targets={here}
+							chosen={showing}
+							onChoose={setChosen}
+						/>
+						<div className="chosen">
+							{document !== undefined && <Document document={document} />}
+							{target !== undefined && (
+								<DestinationPanel
+									slug={slug}
+									target={target}
+									today={localDate(new Date())}
+									onRecord={async (publication) =>
+										setHere(applied(await window.pressroom.recordPublication(slug, publication)))
+									}
+									onForget={async (forgotten) =>
+										setHere(
+											applied(
+												await window.pressroom.forgetPublication(slug, forgotten.platform, forgotten.language),
+											),
+										)
+									}
+								/>
+							)}
+						</div>
+					</div>
 				</>
 			)}
 		</article>

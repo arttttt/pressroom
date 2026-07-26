@@ -249,7 +249,110 @@ main {
 	font-size: 12px;
 }
 
-/* An article's own destinations: fuller, and each one can be acted on. */
+/*
+ * An article: a list beside what it selects. Rows that expand push the page
+ * about under the hand and bury the detail inside the list, so the list stays
+ * still and the detail has its own place.
+ */
+
+.article-body {
+	display: grid;
+	grid-template-columns: 14em minmax(0, 1fr);
+	gap: 0 30px;
+	margin-top: 22px;
+}
+
+.article-aside {
+	position: sticky;
+	top: 0;
+	align-self: start;
+	max-height: 100vh;
+	overflow: auto;
+	overscroll-behavior: none;
+	padding-bottom: 20px;
+}
+
+.article-aside h2 {
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--quiet);
+}
+
+.article-aside h2 + ul {
+	margin: 0 0 22px;
+}
+
+.article-aside ul {
+	padding: 0;
+	list-style: none;
+}
+
+.article-aside button {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	width: 100%;
+	padding: 6px 9px;
+	border: 0;
+	border-radius: 6px;
+	background: none;
+	color: inherit;
+	text-align: left;
+}
+
+.article-aside button:hover {
+	background: var(--card);
+}
+
+.article-aside button.current {
+	background: var(--card);
+	box-shadow: 0 0 0 1px var(--edge);
+}
+
+.article-aside .what {
+	flex: 1;
+	font-size: 12.5px;
+}
+
+.article-aside li.missing .what {
+	color: var(--quiet);
+}
+
+.article-aside .mark {
+	align-self: center;
+}
+
+.chosen {
+	min-width: 0;
+}
+
+.chosen-destination header {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.chosen-destination h2 {
+	margin: 0;
+	font-family: var(--editorial);
+	font-size: 19px;
+	font-weight: 500;
+}
+
+.chosen-destination .how {
+	margin-left: auto;
+	color: var(--quiet);
+}
+
+.chosen-destination .actions,
+.chosen-destination .published-at,
+.chosen-destination > .quiet {
+	margin-bottom: 14px;
+}
+
+/* Kept for the desk's compact rail. */
 
 .article-destinations {
 	margin: 22px 0 30px;
@@ -542,12 +645,18 @@ main {
 	font-size: 12px;
 }
 
+/* The title runs long, so it takes its own line rather than pushing the two
+   short fields around it. */
 .platform-fields {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px 28px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 12px 28px;
 	margin: 0;
 	padding: 0 16px 12px;
+}
+
+.platform-fields > :first-child {
+	grid-column: 1 / -1;
 }
 
 .platform-fields dt {
