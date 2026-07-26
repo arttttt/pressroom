@@ -1,5 +1,4 @@
 import type { ArticleDocument } from "../../shared/article.js";
-import type { RenderedArticle } from "./renderer.js";
 
 /**
  * A fenced block opener: three or more backticks or tildes, indented no more
@@ -7,18 +6,23 @@ import type { RenderedArticle } from "./renderer.js";
  */
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const ATX_HEADING = /^( {0,3})(#{1,6})([ \t]|$)/;
-const MAX_HEADING_LEVEL = 6;
+const DEEPEST_LEVEL = 6;
+
+/** A document's own text, before any platform has had a say in it. */
+export interface PlainDocument {
+	readonly title: string;
+	readonly body: string;
+}
 
 /**
- * Pushes every heading one level down, leaving fenced code untouched.
+ * Applies a change to every line except those inside a fenced block.
  *
- * Section notes are written standalone, so their own heading is `#` and any
- * heading inside them starts at `##`. Assembled into one article those move
- * down a level, and the shell script in a code block that begins with `# ` is
- * a comment rather than a heading — which is why this tracks fences instead of
- * matching line by line.
+ * Every transform here has the same reason to know about fences: `# ` opens a
+ * comment in the shell snippets these articles are full of, and rewriting one
+ * as a heading corrupts the command. Fences are matched as Markdown defines
+ * them, so a shorter run cannot close a longer one.
  */
-export function demoteHeadings(markdown: string): string {
+function outsideFences(markdown: string, change: (line: string) => string): string {
 	let openedWith: string | null = null;
 
 	return markdown
@@ -41,15 +45,43 @@ export function demoteHeadings(markdown: string): string {
 				return line;
 			}
 
-			if (openedWith !== null) return line;
-
-			const heading = ATX_HEADING.exec(line);
-			if (heading === null) return line;
-			const hashes = heading[2] ?? "";
-			if (hashes.length >= MAX_HEADING_LEVEL) return line;
-			return `${heading[1] ?? ""}#${line.trimStart()}`;
+			return openedWith === null ? change(line) : line;
 		})
 		.join("\n");
+}
+
+/**
+ * Pushes every heading one level down.
+ *
+ * Section notes are written standalone, so their own heading is `#` and any
+ * heading inside them starts at `##`. Assembled into one article those move
+ * down a level.
+ */
+export function demoteHeadings(markdown: string): string {
+	return outsideFences(markdown, (line) => {
+		const heading = ATX_HEADING.exec(line);
+		if (heading === null) return line;
+		const hashes = heading[2] ?? "";
+		if (hashes.length >= DEEPEST_LEVEL) return line;
+		return `${heading[1] ?? ""}#${line.trimStart()}`;
+	});
+}
+
+/**
+ * Lifts anything deeper than a platform allows up to its deepest level.
+ *
+ * Habr stops at the third; a heading below that is not rendered small, it is
+ * not rendered as a heading at all. Flattening is the lesser loss — the text
+ * keeps its emphasis, and only the distinction between two depths goes.
+ */
+export function capHeadings(markdown: string, deepest: number): string {
+	return outsideFences(markdown, (line) => {
+		const heading = ATX_HEADING.exec(line);
+		if (heading === null) return line;
+		const hashes = heading[2] ?? "";
+		if (hashes.length <= deepest) return line;
+		return `${heading[1] ?? ""}${"#".repeat(deepest)}${line.trimStart().slice(hashes.length)}`;
+	});
 }
 
 /**
@@ -59,11 +91,11 @@ export function demoteHeadings(markdown: string): string {
  * repeating it as a heading duplicates it on the published page. Section
  * headings therefore become the document's top level, at `##`.
  *
- * This is also the base the platform renderers work from — each of them starts
- * from plain Markdown and adjusts, so what they share lives here rather than
- * being written out five times.
+ * This is the base every platform renderer works from — each starts here and
+ * adjusts, so what they share lives in one place rather than being written out
+ * five times.
  */
-export function assembleMarkdown(doc: ArticleDocument): RenderedArticle {
+export function assembleMarkdown(doc: ArticleDocument): PlainDocument {
 	const body = doc.sections
 		.map((section) => {
 			const prose = demoteHeadings(section.body).trim();
@@ -72,5 +104,5 @@ export function assembleMarkdown(doc: ArticleDocument): RenderedArticle {
 		})
 		.join("\n\n");
 
-	return { title: doc.title, body, fields: {} };
+	return { title: doc.title, body };
 }

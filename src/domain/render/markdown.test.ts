@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ArticleDocument } from "../../shared/article.js";
-import { assembleMarkdown, demoteHeadings } from "./markdown.js";
+import { assembleMarkdown, capHeadings, demoteHeadings } from "./markdown.js";
 
 describe("demoteHeadings", () => {
 	it("moves every heading one level down", () => {
@@ -44,6 +44,29 @@ describe("demoteHeadings", () => {
 	});
 });
 
+describe("capHeadings", () => {
+	it("lifts anything deeper than the platform allows", () => {
+		expect(capHeadings("#### Four\n\n##### Five", 3)).toBe("### Four\n\n### Five");
+	});
+
+	it("leaves headings the platform renders alone", () => {
+		expect(capHeadings("# One\n\n## Two\n\n### Three", 3)).toBe("# One\n\n## Two\n\n### Three");
+	});
+
+	it("leaves a comment inside a fence alone, however many hashes it has", () => {
+		const text = "```sh\n#### not a heading\n```\n\n#### a heading";
+		expect(capHeadings(text, 3)).toBe("```sh\n#### not a heading\n```\n\n### a heading");
+	});
+
+	it("keeps the heading's text exactly", () => {
+		expect(capHeadings("####   Spaced out  ", 3)).toBe("###   Spaced out  ");
+	});
+
+	it("does not touch a hashtag", () => {
+		expect(capHeadings("#### and #draft", 3)).toBe("### and #draft");
+	});
+});
+
 const DOCUMENT: ArticleDocument = {
 	language: "en",
 	title: "How I Turned a OnePlus 3T into a postmarketOS Home Server",
@@ -64,10 +87,6 @@ describe("assembleMarkdown", () => {
 		const rendered = assembleMarkdown(DOCUMENT);
 		expect(rendered.title).toBe(DOCUMENT.title);
 		expect(rendered.body).not.toContain(DOCUMENT.title);
-	});
-
-	it("carries no platform extras, having no platform", () => {
-		expect(assembleMarkdown(DOCUMENT).fields).toEqual({});
 	});
 
 	it("still emits the heading of a section that has nothing under it yet", () => {
