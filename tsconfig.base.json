@@ -1,0 +1,21 @@
+{
+	// Settings both halves of the application share. The split into a Node side
+	// and a web side is not cosmetic: the main process must not see `document`,
+	// and the renderer must not see `process`. Each side adds its own `lib`.
+	"compilerOptions": {
+		"target": "ES2023",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"noImplicitOverride": true,
+		"verbatimModuleSyntax": true,
+		// A bundler transpiles each file on its own and never sees the others,
+		// so anything that would need whole-program knowledge must be an error.
+		"isolatedModules": true,
+		"skipLibCheck": true,
+		// Output belongs to electron-vite; tsc is only ever asked to check.
+		"noEmit": true
+	}
+}

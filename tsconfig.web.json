@@ -1,0 +1,13 @@
+{
+	// The renderer: DOM and JSX, and deliberately no Node types — everything it
+	// needs from the outside arrives over IPC through the preload bridge.
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
+		"jsx": "react-jsx",
+		// Vite's own types, for the asset imports it resolves (`./index.css`).
+		// Node's types are deliberately absent: the renderer has no `process`.
+		"types": ["vite/client"]
+	},
+	"include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx", "src/shared/**/*.ts"]
+}

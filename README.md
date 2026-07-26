@@ -35,12 +35,35 @@ submits anything on its own.
 
 ## Status
 
-Skeleton. The design lives in the `pressroom` project in mnemo; `docs/` carries
-the parts that belong in the repository.
+A shell that runs, and nothing beyond it. The window opens and asks the main
+process which platforms exist; that answer crossing renderer → preload → main →
+domain is the whole of what works. None of the publishing described above is
+implemented. The design lives in the `pressroom` project in mnemo; `docs/`
+carries the parts that belong in the repository.
+
+## Running it
+
+```sh
+pnpm install
+pnpm dev
+```
+
+`pnpm dev` opens the window with the renderer reloading on save. The rest:
+
+| command | what it does |
+|---|---|
+| `pnpm build` | builds main, preload and renderer into `out/` |
+| `pnpm start` | runs the built application, without the dev server |
+| `pnpm typecheck` | checks both halves — the Node side and the renderer |
+| `pnpm test` | runs the unit tests |
+
+Electron downloads its own binary the first time it is needed, so the first
+`pnpm dev` takes noticeably longer than the ones after it.
 
 ## Requirements
 
-macOS only. Node 24+, pnpm. The Bitwarden CLI (`bw`) for credentials, and
-Obsidian with the Local REST API plugin enabled — the vault is reached through
-it rather than through the filesystem, so that Obsidian remains the only writer
-of its own files.
+macOS only. Node 24+, pnpm — that is everything the shell needs. The Bitwarden
+CLI (`bw`) and Obsidian with the Local REST API plugin are requirements of the
+features rather than of the application starting: the vault is reached through
+the plugin rather than through the filesystem, so that Obsidian remains the only
+writer of its own files.
