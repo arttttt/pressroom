@@ -112,9 +112,6 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 				{/* The title each platform wants in its own title field, which is why
 				    it is shown apart from the body rather than found inside it. */}
 				<span className="headline">{document.title}</span>
-				<span className="measure">
-					{document.outline.length} sections · {document.body.length.toLocaleString("en")} characters
-				</span>
 			</header>
 			<BodyViews body={document.body} outline={document.outline} />
 		</section>

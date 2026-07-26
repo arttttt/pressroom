@@ -35,7 +35,9 @@ export function PlatformPanel({
 	if (result.kind === "failed") return <p className="failed">{result.reason}</p>;
 
 	return (
-		<div className="prepared">
+		// The same box a document sits in, so the two read as one construct
+		// rather than as two that happen to show similar things.
+		<div className="document prepared">
 			<dl className="platform-fields">
 				<div>
 					<dt>Title field</dt>
@@ -58,7 +60,7 @@ export function PlatformPanel({
 				Habr renders this only with Markdown mode switched on in its editor's settings, which has to be
 				done before the text is pasted
 			</p>
-			<BodyViews body={result.rendered.body} />
+			<BodyViews body={result.rendered.body} startHidden />
 		</div>
 	);
 }

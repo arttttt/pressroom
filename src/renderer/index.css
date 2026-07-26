@@ -318,24 +318,15 @@ main {
 	overflow-wrap: anywhere;
 }
 
-.prepared .platform-fields,
-.prepared .note {
-	padding-left: 0;
-	padding-right: 0;
-}
-
-.prepared .toolbar {
-	padding-left: 0;
-}
-
-.prepared .reading {
+/* No overrides for what is inside: a prepared article and a document are the
+   same construct, and the moment one is styled by where it sits they stop
+   looking alike. */
+.prepared {
 	margin-top: 4px;
 }
 
-.prepared .outline,
-.prepared .preview,
-.prepared .reading > pre {
-	padding-left: 0;
+.prepared .platform-fields {
+	padding-top: 14px;
 }
 
 .article-destinations .names {
@@ -545,22 +536,9 @@ main {
 	padding: 12px 16px 13px;
 }
 
-/* What a platform receives, as against the article itself. */
-
-.document.platform {
-	border-color: var(--blue);
-}
-
-.document .close {
-	margin-left: auto;
-}
-
-.inset {
+.note {
 	margin: 0;
 	padding: 0 16px 14px;
-}
-
-.note {
 	font-size: 12px;
 }
 
@@ -586,11 +564,11 @@ main {
 .toolbar {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 10px;
 	padding: 0 16px 13px;
 }
 
-.toolbar .btn {
+.toolbar .measure {
 	margin-left: auto;
 }
 

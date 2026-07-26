@@ -7,26 +7,32 @@ import { splitSource } from "../preview/source.js";
 /**
  * Ways of looking at one body of text, each answering a different question:
  * the outline says whether it is all there, the preview how it will read, the
- * Markdown exactly what gets pasted.
+ * Markdown exactly what gets pasted. `hidden` is none of them — the text is
+ * there to be taken rather than read.
  */
-type View = "outline" | "preview" | "markdown";
+type View = "hidden" | "outline" | "preview" | "markdown";
 
 /**
- * The same three views over an assembled document and over what a platform is
- * handed, so what is learned on one is true of the other.
+ * One body of text and the ways of looking at it, identical wherever it
+ * appears — under an article and under a destination — so what is learned in
+ * one place holds in the other.
  *
- * The outline is optional because it answers a question only the assembled
- * document raises — did eleven files come out whole. What a platform receives
- * has already been through that check.
+ * `startHidden` is for a destination: opening one is asking what it will
+ * receive and taking it, not settling down to read twenty thousand characters,
+ * and unrolling all of them pushes every other destination off the screen.
  */
 export function BodyViews({
 	body,
 	outline,
+	startHidden = false,
 }: {
 	readonly body: string;
 	readonly outline?: readonly OutlineEntry[];
+	readonly startHidden?: boolean;
 }) {
-	const [view, setView] = useState<View>(outline === undefined ? "preview" : "outline");
+	const [view, setView] = useState<View>(
+		startHidden ? "hidden" : outline === undefined ? "preview" : "outline",
+	);
 	const [copied, setCopied] = useState(false);
 
 	// Parsing twenty thousand characters is not something to redo because a
@@ -44,6 +50,8 @@ export function BodyViews({
 		{ id: "markdown", label: "Markdown" },
 	];
 
+	const sections = outline?.length ?? preview.sections.length;
+
 	async function copy() {
 		await navigator.clipboard.writeText(body);
 		setCopied(true);
@@ -53,19 +61,35 @@ export function BodyViews({
 	return (
 		<>
 			<div className="toolbar">
-				<span className="views">
-					{views.map(({ id, label }) => (
-						<button
-							key={id}
-							type="button"
-							className={view === id ? "current" : ""}
-							aria-pressed={view === id}
-							onClick={() => setView(id)}
-						>
-							{label}
-						</button>
-					))}
+				{view === "hidden" ? (
+					<button type="button" className="btn small" onClick={() => setView(views[0]?.id ?? "preview")}>
+						Show the text
+					</button>
+				) : (
+					<span className="views">
+						{views.map(({ id, label }) => (
+							<button
+								key={id}
+								type="button"
+								className={view === id ? "current" : ""}
+								aria-pressed={view === id}
+								onClick={() => setView(id)}
+							>
+								{label}
+							</button>
+						))}
+						{startHidden && (
+							<button type="button" onClick={() => setView("hidden")}>
+								Hide
+							</button>
+						)}
+					</span>
+				)}
+
+				<span className="measure">
+					{sections} sections · {body.length.toLocaleString("en")} characters
 				</span>
+
 				<button type="button" className="btn small primary" onClick={() => void copy()}>
 					{copied ? "Copied" : "Copy"}
 				</button>
