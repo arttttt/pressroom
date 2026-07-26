@@ -5,7 +5,6 @@ import type { Publication } from "../../shared/publication.js";
 import { Back } from "../Back.js";
 import { ArticleDestinations } from "./ArticleDestinations.js";
 import { BodyViews } from "./BodyViews.js";
-import { PlatformPanel } from "./PlatformPanel.js";
 import { localDate } from "./today.js";
 
 /**
@@ -26,7 +25,6 @@ export function ArticlePage({
 	readonly onBack: () => void;
 }) {
 	const [result, setResult] = useState<ArticleResult | null>(null);
-	const [showing, setShowing] = useState<Target | null>(null);
 	// Where it has gone. Held here rather than taken from the desk's summary,
 	// because recording one changes it and the page has to show that at once.
 	const [here, setHere] = useState<readonly Target[]>(targets);
@@ -36,7 +34,6 @@ export function ArticlePage({
 	useEffect(() => {
 		let listening = true;
 		setResult(null);
-		setShowing(null);
 		setHere(targets);
 		void window.pressroom.readArticle(slug).then((read) => listening && setResult(read));
 		return () => {
@@ -89,24 +86,14 @@ export function ArticlePage({
 				<>
 					<h1>{result.title}</h1>
 					<ArticleDestinations
+						slug={slug}
 						targets={here}
-						opened={showing?.platform ?? null}
-						onOpen={(target) => setShowing(showing?.platform === target.platform ? null : target)}
 						today={localDate(new Date())}
 						onRecord={async (publication) => setHere(applied(await window.pressroom.recordPublication(slug, publication)))}
 						onForget={async (target) =>
 							setHere(applied(await window.pressroom.forgetPublication(slug, target.platform, target.language)))
 						}
 					/>
-
-					{showing !== null && (
-						<PlatformPanel
-							slug={slug}
-							platform={showing.platform}
-							displayName={showing.displayName}
-							onClose={() => setShowing(null)}
-						/>
-					)}
 
 					{result.documents.map((document) => (
 						<Document key={document.language} document={document} />

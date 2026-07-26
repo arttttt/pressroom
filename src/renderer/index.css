@@ -262,11 +262,80 @@ main {
 	border-bottom: 1px solid var(--edge);
 }
 
+/* The row states where the article stands with one platform; everything that
+   can be done about it lives inside, at the row it belongs to. */
 .article-destinations .row {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 9px 2px;
+	width: 100%;
+	padding: 10px 2px;
+	border: 0;
+	background: none;
+	text-align: left;
+}
+
+.article-destinations .row:not(:disabled):hover .platform {
+	color: var(--blue);
+}
+
+.article-destinations .row:disabled {
+	opacity: 1;
+}
+
+.disclosure {
+	flex: none;
+	width: 6px;
+	height: 6px;
+	margin: -3px 4px 0 6px;
+	border-right: 1.5px solid var(--quiet);
+	border-bottom: 1.5px solid var(--quiet);
+	transform: rotate(45deg);
+}
+
+.row.open .disclosure {
+	margin-top: 2px;
+	transform: rotate(225deg);
+	border-color: var(--blue);
+}
+
+.opened {
+	padding: 2px 0 18px 22px;
+}
+
+.opened .actions {
+	margin-bottom: 14px;
+}
+
+.published-at {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.published-at a {
+	color: var(--blue);
+	overflow-wrap: anywhere;
+}
+
+.prepared .platform-fields,
+.prepared .note {
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.prepared .toolbar {
+	padding-left: 0;
+}
+
+.prepared .reading {
+	margin-top: 4px;
+}
+
+.prepared .outline,
+.prepared .preview,
+.prepared .reading > pre {
+	padding-left: 0;
 }
 
 .article-destinations .names {
@@ -301,25 +370,6 @@ main {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.article-destinations .actions {
-	display: flex;
-	gap: 12px;
-	margin-left: 14px;
-}
-
-.article-destinations .link {
-	padding: 0;
-	border: 0;
-	background: none;
-	color: var(--quiet);
-	font-size: 12px;
-}
-
-.article-destinations .link:hover,
-.article-destinations .link.current {
-	color: var(--blue);
 }
 
 /* Recording where it went, once it has gone. */
