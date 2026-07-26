@@ -1,5 +1,7 @@
 import type { ArticleResult } from "./article-result.js";
 import type { ArticleSummary } from "./article-summary.js";
+import type { PlatformId } from "./platform.js";
+import type { RenderResult } from "./rendered.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "./settings.js";
 
 /**
@@ -12,6 +14,7 @@ export const IPC = {
 	checkVault: "vault:check",
 	listArticles: "articles:list",
 	readArticle: "articles:read",
+	renderArticle: "articles:render",
 } as const;
 
 /**
@@ -29,4 +32,6 @@ export interface PressroomApi {
 	checkVault(): Promise<VaultCheck>;
 	listArticles(): Promise<readonly ArticleSummary[]>;
 	readArticle(slug: string): Promise<ArticleResult>;
+	/** The same article as one platform will be handed it. */
+	renderArticle(slug: string, platform: PlatformId): Promise<RenderResult>;
 }

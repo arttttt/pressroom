@@ -1,24 +1,8 @@
 import type { ArticleDocument } from "../../shared/article.js";
 import type { PlatformId } from "../../shared/platform.js";
+import type { Rendered } from "../../shared/rendered.js";
 
-/**
- * An article prepared for one platform: everything that platform is handed,
- * and nothing belonging to another.
- *
- * A union rather than a title, a body and a bag of strings for the rest. Hubs
- * are a list, not a comma-joined string, and the code filling Habr's editor
- * should be able to rely on their being there without reaching into a record
- * and hoping. Each platform's variant arrives with its renderer; inventing
- * fields for editors nobody has looked at yet would be guessing.
- */
-export type Rendered = {
-	readonly platform: "habr";
-	readonly title: string;
-	readonly body: string;
-	/** Habr's own taxonomy. Both are the author's choice, per article. */
-	readonly hubs: readonly string[];
-	readonly tags: readonly string[];
-};
+export type { Rendered };
 
 /**
  * What a renderer needs beyond the text itself.

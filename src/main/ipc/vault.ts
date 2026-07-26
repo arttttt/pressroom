@@ -1,9 +1,12 @@
 import { ipcMain } from "electron";
 import { targetsFor } from "../../domain/platforms/targets.js";
 import { assembleMarkdown } from "../../domain/render/markdown.js";
+import { renderFor } from "../../domain/render/renderers.js";
 import { UnsupportedArticleLayout } from "../../domain/vault/reader.js";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { ArticleSummary } from "../../shared/article-summary.js";
+import type { PlatformId } from "../../shared/platform.js";
+import type { RenderResult } from "../../shared/rendered.js";
 import { IPC } from "../../shared/ipc.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "../../shared/settings.js";
 import { type SettingsStore, visible } from "../settings/store.js";
@@ -19,6 +22,8 @@ import { connectToVault, forgetVaultConnection } from "../vault/connect.js";
  * problem is that the plugin is switched off.
  */
 export function registerVaultHandlers(settings: SettingsStore): void {
+	registerRender(settings);
+
 	ipcMain.handle(IPC.readSettings, async (): Promise<Settings> => visible(await settings.read()));
 
 	ipcMain.handle(
@@ -82,6 +87,25 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 			return { kind: "failed", slug, reason: reason(cause) };
 		}
 	});
+}
+
+/** The same article, as one platform will be handed it. */
+function registerRender(settings: SettingsStore): void {
+	ipcMain.handle(
+		IPC.renderArticle,
+		async (_event, slug: string, platform: PlatformId): Promise<RenderResult> => {
+			try {
+				const reader = await connectToVault(await settings.read());
+				return renderFor(await reader.readArticle(slug), platform);
+			} catch (cause) {
+				if (cause instanceof UnsupportedArticleLayout) {
+					return { kind: "unsupported", platform, reason: cause.message };
+				}
+				forgetVaultConnection();
+				return { kind: "failed", reason: reason(cause) };
+			}
+		},
+	);
 }
 
 function reason(cause: unknown): string {

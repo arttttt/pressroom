@@ -14,6 +14,7 @@ const api: PressroomApi = {
 	checkVault: () => ipcRenderer.invoke(IPC.checkVault),
 	listArticles: () => ipcRenderer.invoke(IPC.listArticles),
 	readArticle: (slug) => ipcRenderer.invoke(IPC.readArticle, slug),
+	renderArticle: (slug, platform) => ipcRenderer.invoke(IPC.renderArticle, slug, platform),
 };
 
 contextBridge.exposeInMainWorld("pressroom", api);

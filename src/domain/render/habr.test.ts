@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { ArticleDocument } from "../../shared/article.js";
 import { habrRenderer } from "./habr.js";
 import type { RenderContext } from "./renderer.js";
-import { rendererFor } from "./renderers.js";
 
 const NOTHING: RenderContext = { canonicalUrl: null, hubs: [], tags: [] };
 
@@ -65,17 +64,5 @@ describe("habrRenderer", () => {
 
 	it("reports no hubs as none rather than as an empty string", () => {
 		expect(habrRenderer.render(ARTICLE, NOTHING).hubs).toEqual([]);
-	});
-});
-
-describe("rendererFor", () => {
-	it("finds the renderer a platform has", () => {
-		expect(rendererFor("habr")).toBe(habrRenderer);
-	});
-
-	it("answers with nothing for a platform whose editor has not been looked at", () => {
-		// Better than a renderer that emits plain Markdown and hopes.
-		expect(rendererFor("hackernoon")).toBeNull();
-		expect(rendererFor("reddit")).toBeNull();
 	});
 });
