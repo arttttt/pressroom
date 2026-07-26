@@ -1,10 +1,23 @@
 import type { Language } from "./article.js";
 
+/** A section as it appears in the assembled document. */
+export interface OutlineEntry {
+	readonly heading: string;
+	readonly characters: number;
+}
+
 /** One language of an article, already joined into a single document. */
 export interface AssembledDocument {
 	readonly language: Language;
 	readonly title: string;
-	readonly sections: number;
+	/**
+	 * The sections in reading order.
+	 *
+	 * What wants checking before an article goes out is the assembly — every
+	 * section present, in the order the index gives — and that is read from the
+	 * headings far faster than from twenty thousand characters of prose.
+	 */
+	readonly outline: readonly OutlineEntry[];
 	readonly body: string;
 }
 

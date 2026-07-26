@@ -9,7 +9,7 @@ import { Destinations } from "../destinations/Destinations.js";
  *
  * State first, prose second. The author wrote the text and can read it in
  * Obsidian; what they cannot see there is which of the five places it is ready
- * for, so that comes first and the Markdown stays folded until asked for.
+ * for, and whether the assembly came out whole.
  */
 export function ArticlePage({
 	slug,
@@ -69,7 +69,7 @@ export function ArticlePage({
 }
 
 function Document({ document }: { readonly document: AssembledDocument }) {
-	const [showing, setShowing] = useState(false);
+	const [source, setSource] = useState(false);
 	const [copied, setCopied] = useState(false);
 
 	async function copy() {
@@ -85,19 +85,30 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 				{/* The title each platform wants in its own title field, which is why
 				    it is shown apart from the body rather than found inside it. */}
 				<span className="headline">{document.title}</span>
-			</header>
-			<div className="foot">
 				<span className="measure">
-					{document.sections} sections · {document.body.length.toLocaleString("en")} characters
+					{document.outline.length} sections · {document.body.length.toLocaleString("en")} characters
 				</span>
-				<button type="button" className="btn small" onClick={() => setShowing(!showing)}>
-					{showing ? "Hide Markdown" : "Show Markdown"}
+				<button type="button" className="btn small" onClick={() => setSource(!source)}>
+					{source ? "Outline" : "Markdown"}
 				</button>
 				<button type="button" className="btn small primary" onClick={() => void copy()}>
-					{copied ? "Copied" : "Copy Markdown"}
+					{copied ? "Copied" : "Copy"}
 				</button>
-			</div>
-			{showing && <pre>{document.body}</pre>}
+			</header>
+
+			{source ? (
+				<pre>{document.body}</pre>
+			) : (
+				<ol className="outline">
+					{document.outline.map((entry, position) => (
+						<li key={`${position}-${entry.heading}`}>
+							<span className="position">{position + 1}</span>
+							<span className="heading">{entry.heading}</span>
+							<span className="characters">{entry.characters.toLocaleString("en")}</span>
+						</li>
+					))}
+				</ol>
+			)}
 		</section>
 	);
 }

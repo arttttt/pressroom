@@ -63,7 +63,10 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 				return {
 					language: document.language,
 					title: assembled.title,
-					sections: document.sections.length,
+					outline: document.sections.map((section) => ({
+						heading: section.heading,
+						characters: section.body.length,
+					})),
 					body: assembled.body,
 				};
 			});
