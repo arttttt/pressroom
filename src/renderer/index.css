@@ -385,12 +385,16 @@ main {
 
 /* Assembled documents */
 
+/*
+ * No `overflow: hidden` here. It would clip a rounded corner against a layer
+ * twenty thousand characters tall on every scrolled frame, and it stops the
+ * contents beside the text from sticking.
+ */
 .document {
 	margin: 0 0 12px;
 	border: 1px solid var(--edge);
 	border-radius: 9px;
 	background: var(--card);
-	overflow: hidden;
 }
 
 .document header {
@@ -487,10 +491,65 @@ main {
  * enough to show the shape of the assembly.
  */
 
+/* The text and its contents, side by side. */
+
+.reading {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 13.5em;
+	gap: 0 22px;
+	border-top: 1px solid var(--edge);
+}
+
+.contents {
+	position: sticky;
+	top: 0;
+	align-self: start;
+	max-height: 100vh;
+	padding: 18px 16px 18px 0;
+	overflow: auto;
+	overscroll-behavior: none;
+}
+
+.contents ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-left: 1px solid var(--edge);
+}
+
+.contents button {
+	display: flex;
+	gap: 8px;
+	width: 100%;
+	padding: 4px 0 4px 11px;
+	margin-left: -1px;
+	border: 0;
+	border-left: 1px solid transparent;
+	background: none;
+	color: var(--quiet);
+	font-size: 12px;
+	line-height: 1.35;
+	text-align: left;
+}
+
+.contents button:hover {
+	color: var(--ink);
+}
+
+.contents button.current {
+	border-left-color: var(--blue);
+	color: var(--ink);
+}
+
+.contents .position {
+	font-family: var(--wire);
+	font-size: 10px;
+	padding-top: 1px;
+}
+
 .preview {
 	padding: 18px 16px 24px;
 	max-width: 38em;
-	border-top: 1px solid var(--edge);
 	font-family: var(--editorial);
 	font-size: 15.5px;
 	line-height: 1.62;
@@ -624,15 +683,13 @@ main {
  * two selectors carry the same weight and this one is written later, which is
  * how it would win.
  */
-.document > pre {
+.reading > pre {
 	margin: 0;
 	padding: 15px 16px 20px;
-	max-width: 64em;
 	white-space: pre-wrap;
 	font-family: var(--wire);
 	font-size: 12px;
 	line-height: 1.7;
-	border-top: 1px solid var(--edge);
 }
 
 /* Settings */

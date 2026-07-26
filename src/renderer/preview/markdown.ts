@@ -1,5 +1,22 @@
 import MarkdownIt from "markdown-it";
 
+/** A section of the assembled document, and where to scroll to reach it. */
+export interface PreviewSection {
+	readonly id: string;
+	readonly heading: string;
+}
+
+export interface Preview {
+	readonly html: string;
+	/**
+	 * The article's own sections, which are what the assembly puts at the second
+	 * level. Sub-headings inside a section are left out: the contents beside the
+	 * text answers "where is that part of the article", and eleven entries do
+	 * that where thirty would not.
+	 */
+	readonly sections: readonly PreviewSection[];
+}
+
 /**
  * Turns an assembled document into the HTML the preview shows.
  *
@@ -19,6 +36,21 @@ const markdown = new MarkdownIt({
 	breaks: false,
 });
 
-export function renderMarkdown(source: string): string {
-	return markdown.render(source);
+/** Shared with the source view, so both are reached by the same contents. */
+export function anchorFor(position: number): string {
+	return `section-${position}`;
+}
+
+export function renderMarkdown(source: string): Preview {
+	const tokens = markdown.parse(source, {});
+	const sections: PreviewSection[] = [];
+
+	for (const [index, token] of tokens.entries()) {
+		if (token.type !== "heading_open" || token.tag !== "h2") continue;
+		const id = anchorFor(sections.length);
+		token.attrSet("id", id);
+		sections.push({ id, heading: tokens[index + 1]?.content ?? "" });
+	}
+
+	return { html: markdown.renderer.render(tokens, markdown.options, {}), sections };
 }

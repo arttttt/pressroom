@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { Target } from "../../shared/platform.js";
 import { Back } from "../Back.js";
 import { Destinations } from "../destinations/Destinations.js";
+import { Contents } from "../preview/Contents.js";
 import { renderMarkdown } from "../preview/markdown.js";
+import { splitSource } from "../preview/source.js";
 
 /**
  * One article: where it can go, and the text to take there.
@@ -93,6 +95,15 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 	const [view, setView] = useState<View>("outline");
 	const [copied, setCopied] = useState(false);
 
+	// Parsing twenty thousand characters is not something to redo because a
+	// button said "Copied" — and once the contents tracks scrolling, a re-render
+	// arrives with every section that passes.
+	const preview = useMemo(() => renderMarkdown(document.body), [document.body]);
+	const source = useMemo(
+		() => splitSource(document.body, preview.sections.map((section) => section.heading)),
+		[document.body, preview],
+	);
+
 	async function copy() {
 		await navigator.clipboard.writeText(document.body);
 		setCopied(true);
@@ -140,13 +151,27 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 			)}
 
 			{view === "preview" && (
-				/* The HTML is produced by a renderer that escapes markup rather than
-				   passing it through, so nothing out of the vault can become an
-				   element here. See renderer/preview/markdown.ts. */
-				<div className="preview" dangerouslySetInnerHTML={{ __html: renderMarkdown(document.body) }} />
+				<div className="reading">
+					{/* The HTML is produced by a renderer that escapes markup rather
+					    than passing it through, so nothing out of the vault can become
+					    an element here. See renderer/preview/markdown.ts. */}
+					<div className="preview" dangerouslySetInnerHTML={{ __html: preview.html }} />
+					<Contents sections={preview.sections} />
+				</div>
 			)}
 
-			{view === "markdown" && <pre>{document.body}</pre>}
+			{view === "markdown" && (
+				<div className="reading">
+					<pre>
+						{source.map((part, index) => (
+							<span key={part.id ?? `head-${index}`} {...(part.id === null ? {} : { id: part.id })}>
+								{part.text}
+							</span>
+						))}
+					</pre>
+					<Contents sections={preview.sections} />
+				</div>
+			)}
 		</section>
 	);
 }
