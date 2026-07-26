@@ -1,4 +1,5 @@
 import type { ArticleResult } from "./article-result.js";
+import type { ArticleSummary } from "./article-summary.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "./settings.js";
 
 /**
@@ -26,6 +27,6 @@ export interface PressroomApi {
 	saveSettings(update: SettingsUpdate): Promise<Settings>;
 	/** Talks to the vault, which is the only way to know the settings are right. */
 	checkVault(): Promise<VaultCheck>;
-	listArticles(): Promise<readonly string[]>;
+	listArticles(): Promise<readonly ArticleSummary[]>;
 	readArticle(slug: string): Promise<ArticleResult>;
 }

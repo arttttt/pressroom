@@ -31,3 +31,18 @@ export interface Platform {
 	/** Languages this platform is used for. */
 	readonly languages: readonly ("en" | "ru")[];
 }
+
+/**
+ * One place an article can go, and whether there is anything to send there.
+ *
+ * A platform takes one language — Habr Russian, the rest English — so a target
+ * is a platform and that language together, not a platform on its own.
+ */
+export interface Target {
+	readonly platform: PlatformId;
+	readonly displayName: string;
+	readonly language: "en" | "ru";
+	readonly delivery: Delivery["kind"];
+	/** `ready` when the article has text in that language, `missing` when it does not. */
+	readonly state: "ready" | "missing";
+}

@@ -38,6 +38,17 @@ export class ObsidianVaultReader implements VaultReader {
 		return LANGUAGES.filter((language) => present.has(language));
 	}
 
+	async splitLanguages(slug: string): Promise<readonly Language[]> {
+		const languages = await this.availableLanguages(slug);
+		const split = await Promise.all(
+			languages.map(async (language) => {
+				const entries = await this.http.listDirectory(`${this.articles}/${slug}/${language}/`);
+				return entries.includes(`${SECTIONS}/`) ? language : null;
+			}),
+		);
+		return split.filter((language): language is Language => language !== null);
+	}
+
 	/**
 	 * Every language the article has. An article with no language folders yet is
 	 * not an error — it is a folder someone has started; it comes back with no

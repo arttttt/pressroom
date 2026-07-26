@@ -1,7 +1,9 @@
 import { ipcMain } from "electron";
+import { targetsFor } from "../../domain/platforms/targets.js";
 import { assembleMarkdown } from "../../domain/render/markdown.js";
 import { UnsupportedArticleLayout } from "../../domain/vault/reader.js";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
+import type { ArticleSummary } from "../../shared/article-summary.js";
 import { IPC } from "../../shared/ipc.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "../../shared/settings.js";
 import { type SettingsStore, visible } from "../settings/store.js";
@@ -33,9 +35,23 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 		}
 	});
 
-	ipcMain.handle(IPC.listArticles, async (): Promise<readonly string[]> => {
+	ipcMain.handle(IPC.listArticles, async (): Promise<readonly ArticleSummary[]> => {
 		const reader = await connectToVault(await settings.read());
-		return reader.listArticles();
+		const slugs = await reader.listArticles();
+		return Promise.all(
+			slugs.map(async (slug): Promise<ArticleSummary> => {
+				const [present, ready] = await Promise.all([
+					reader.availableLanguages(slug),
+					reader.splitLanguages(slug),
+				]);
+				return {
+					slug,
+					ready,
+					unsplit: present.filter((language) => !ready.includes(language)),
+					targets: targetsFor(ready),
+				};
+			}),
+		);
 	});
 
 	ipcMain.handle(IPC.readArticle, async (_event, slug: string): Promise<ArticleResult> => {

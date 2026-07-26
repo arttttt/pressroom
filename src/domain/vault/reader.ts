@@ -49,4 +49,11 @@ export interface VaultReader {
 	readArticle(slug: string): Promise<Article>;
 	/** Languages that actually have an index file for this article. */
 	availableLanguages(slug: string): Promise<readonly Language[]>;
+	/**
+	 * Of those, the ones written in sections and therefore readable. Answering
+	 * this costs a folder listing rather than reading the article, so a list of
+	 * everything in the vault can say which entries are ready without opening
+	 * each one.
+	 */
+	splitLanguages(slug: string): Promise<readonly Language[]>;
 }

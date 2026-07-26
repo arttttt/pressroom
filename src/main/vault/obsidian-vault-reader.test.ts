@@ -121,6 +121,20 @@ describe("ObsidianVaultReader", () => {
 		expect(await reader.availableLanguages("Started")).toEqual([]);
 	});
 
+	it("tells which languages are written in sections without reading them", async () => {
+		// What the desk needs to show state for the whole vault: a folder listing
+		// per language rather than an article read per row.
+		expect(await reader.splitLanguages("Sample Article")).toEqual(["en", "ru"]);
+		expect(await reader.splitLanguages("Legacy")).toEqual([]);
+		expect(await reader.splitLanguages("Started")).toEqual([]);
+	});
+
+	it("counts a split language even when a section note is missing", async () => {
+		// The layout is right; the article is merely incomplete. Those are
+		// different problems and the desk should not conflate them.
+		expect(await reader.splitLanguages("Broken")).toEqual(["en"]);
+	});
+
 	it("reads a document in the order its index lists", async () => {
 		const article = await reader.readArticle("Sample Article");
 		const english = article.documents.find((document) => document.language === "en");
