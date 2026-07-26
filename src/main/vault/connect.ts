@@ -31,6 +31,18 @@ export async function connectToVault(settings: StoredSettings): Promise<Obsidian
 	return new ObsidianVaultReader(client);
 }
 
+/**
+ * Drops what was cached about the plugin, so the next attempt starts over.
+ *
+ * Called when a conversation with the vault fails. Obsidian may have been
+ * restarted since, and it may have generated a new certificate while it was
+ * down; holding the old one would make every retry fail the same way until the
+ * application itself is restarted, which is the thing retrying exists to avoid.
+ */
+export function forgetVaultConnection(): void {
+	certificates.clear();
+}
+
 function certificateFor(baseUrl: string): Promise<string> {
 	const known = certificates.get(baseUrl);
 	if (known !== undefined) return known;

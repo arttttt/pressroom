@@ -7,7 +7,7 @@ import type { ArticleSummary } from "../../shared/article-summary.js";
 import { IPC } from "../../shared/ipc.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "../../shared/settings.js";
 import { type SettingsStore, visible } from "../settings/store.js";
-import { connectToVault } from "../vault/connect.js";
+import { connectToVault, forgetVaultConnection } from "../vault/connect.js";
 
 /**
  * The settings and the vault, as the interface sees them.
@@ -31,13 +31,14 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 			const reader = await connectToVault(await settings.read());
 			return { kind: "reachable", articles: (await reader.listArticles()).length };
 		} catch (cause) {
+			forgetVaultConnection();
 			return { kind: "failed", reason: reason(cause) };
 		}
 	});
 
 	ipcMain.handle(IPC.listArticles, async (): Promise<readonly ArticleSummary[]> => {
-		const reader = await connectToVault(await settings.read());
-		const slugs = await reader.listArticles();
+		const reader = await connectToVault(await settings.read()).catch(startOver);
+		const slugs = await reader.listArticles().catch(startOver);
 		return Promise.all(
 			slugs.map(async (slug): Promise<ArticleSummary> => {
 				const [present, ready] = await Promise.all([
@@ -72,9 +73,12 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 			});
 			return { kind: "ready", slug, title: article.title, documents };
 		} catch (cause) {
+			// An article in the older layout is not a broken connection, so the
+			// connection is left alone; anything else may well be one.
 			if (cause instanceof UnsupportedArticleLayout) {
 				return { kind: "unsupported", slug, reason: cause.message };
 			}
+			forgetVaultConnection();
 			return { kind: "failed", slug, reason: reason(cause) };
 		}
 	});
@@ -82,4 +86,16 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 
 function reason(cause: unknown): string {
 	return cause instanceof Error ? cause.message : String(cause);
+}
+
+/**
+ * Forgets the connection and lets the failure through.
+ *
+ * Whatever the interface does next — and what it offers is to try again — will
+ * then start from a fresh conversation with the plugin rather than from what
+ * was cached before Obsidian went away.
+ */
+function startOver(cause: unknown): never {
+	forgetVaultConnection();
+	throw cause;
 }

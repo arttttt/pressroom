@@ -24,17 +24,21 @@ export function DeskView({
 	readonly onSettings: () => void;
 }) {
 	const [desk, setDesk] = useState<Desk>({ status: "loading" });
+	// Bumped to ask again. Obsidian may have been started since the last
+	// attempt, and the alternative to asking again is restarting Pressroom.
+	const [attempt, setAttempt] = useState(0);
 
 	useEffect(() => {
 		let listening = true;
+		setDesk({ status: "loading" });
 		window.pressroom
 			.listArticles()
 			.then((articles) => listening && setDesk({ status: "ready", articles }))
-			.catch((cause: unknown) => listening && setDesk({ status: "failed", reason: String(cause) }));
+			.catch((cause: unknown) => listening && setDesk({ status: "failed", reason: message(cause) }));
 		return () => {
 			listening = false;
 		};
-	}, []);
+	}, [attempt]);
 
 	if (desk.status === "loading") return <p className="quiet pad">Reading the vault…</p>;
 
@@ -43,9 +47,14 @@ export function DeskView({
 			<div className="pad empty">
 				<h1>Pressroom cannot reach the vault</h1>
 				<p className="quiet">{desk.reason}</p>
-				<button type="button" className="btn primary" onClick={onSettings}>
-					Open settings
-				</button>
+				<div className="actions">
+					<button type="button" className="btn primary" onClick={() => setAttempt(attempt + 1)}>
+						Try again
+					</button>
+					<button type="button" className="btn" onClick={onSettings}>
+						Open settings
+					</button>
+				</div>
 			</div>
 		);
 	}
@@ -110,6 +119,11 @@ export function DeskView({
 			)}
 		</div>
 	);
+}
+
+/** An Error carried across the bridge arrives as a message, not as a class. */
+function message(cause: unknown): string {
+	return cause instanceof Error ? cause.message : String(cause);
 }
 
 function Heading({ label, count }: { readonly label: string; readonly count: number }) {

@@ -22,14 +22,17 @@ export function ArticlePage({
 	readonly onBack: () => void;
 }) {
 	const [result, setResult] = useState<ArticleResult | null>(null);
+	// Same reason as on the desk: Obsidian may have come back since.
+	const [attempt, setAttempt] = useState(0);
 
 	useEffect(() => {
 		let listening = true;
+		setResult(null);
 		void window.pressroom.readArticle(slug).then((read) => listening && setResult(read));
 		return () => {
 			listening = false;
 		};
-	}, [slug]);
+	}, [slug, attempt]);
 
 	return (
 		<article className="article">
@@ -53,6 +56,11 @@ export function ArticlePage({
 					<h1>{slug}</h1>
 					<p className="lead">This article could not be read</p>
 					<p className="quiet">{result.reason}</p>
+					<div className="actions">
+						<button type="button" className="btn primary" onClick={() => setAttempt(attempt + 1)}>
+							Try again
+						</button>
+					</div>
 				</>
 			)}
 
