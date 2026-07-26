@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { Target } from "../../shared/platform.js";
+import { Back } from "../Back.js";
+import { Destinations } from "../destinations/Destinations.js";
 
 /**
  * One article: where it can go, and the text to take there.
@@ -30,16 +32,14 @@ export function ArticlePage({
 
 	return (
 		<article className="article">
-			<button type="button" className="back" onClick={onBack}>
-				All articles
-			</button>
+			<Back onClick={onBack} />
 
 			{result === null && <p className="quiet">Reading…</p>}
 
 			{result?.kind === "unsupported" && (
 				<>
 					<h1>{slug}</h1>
-					<p className="notice">Written as one note</p>
+					<p className="lead">Written as one note</p>
 					<p className="quiet">
 						Pressroom assembles an article from its section files. Split this one into a{" "}
 						<code>sections/</code> folder with an index naming them in order, and it will appear here
@@ -50,7 +50,7 @@ export function ArticlePage({
 			{result?.kind === "failed" && (
 				<>
 					<h1>{slug}</h1>
-					<p className="notice">This article could not be read</p>
+					<p className="lead">This article could not be read</p>
 					<p className="quiet">{result.reason}</p>
 				</>
 			)}
@@ -58,35 +58,13 @@ export function ArticlePage({
 			{result?.kind === "ready" && (
 				<>
 					<h1>{result.title}</h1>
-					<Targets targets={targets} />
+					<Destinations targets={targets} detailed />
 					{result.documents.map((document) => (
 						<Document key={document.language} document={document} />
 					))}
 				</>
 			)}
 		</article>
-	);
-}
-
-function Targets({ targets }: { readonly targets: readonly Target[] }) {
-	const how = { api: "posted through its API", browser: "filled into its editor", email: "sent as an email" };
-
-	return (
-		<section className="targets">
-			<h2>Where it can go</h2>
-			<ul>
-				{targets.map((target) => (
-					<li key={`${target.platform}-${target.language}`} className={target.state}>
-						<span className={`mark ${target.state}`} />
-						<span className="name">{target.displayName}</span>
-						<span className="lang">{target.language}</span>
-						<span className="how">
-							{target.state === "ready" ? how[target.delivery] : `no ${target.language} text yet`}
-						</span>
-					</li>
-				))}
-			</ul>
-		</section>
 	);
 }
 
@@ -104,6 +82,11 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 		<section className="document">
 			<header>
 				<span className="lang">{document.language}</span>
+				{/* The title each platform wants in its own title field, which is why
+				    it is shown apart from the body rather than found inside it. */}
+				<span className="headline">{document.title}</span>
+			</header>
+			<div className="foot">
 				<span className="measure">
 					{document.sections} sections · {document.body.length.toLocaleString("en")} characters
 				</span>
@@ -113,11 +96,7 @@ function Document({ document }: { readonly document: AssembledDocument }) {
 				<button type="button" className="btn small primary" onClick={() => void copy()}>
 					{copied ? "Copied" : "Copy Markdown"}
 				</button>
-			</header>
-			{/* The title each platform wants in its own title field, which is why
-			    it is shown apart from the body rather than inside it. */}
-			<p className="field">Title</p>
-			<p className="headline">{document.title}</p>
+			</div>
 			{showing && <pre>{document.body}</pre>}
 		</section>
 	);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ApiKeyUpdate, Settings, VaultCheck } from "../../shared/settings.js";
+import { Back } from "../Back.js";
 
 /**
  * Where the connection to the vault is set up.
@@ -7,7 +8,7 @@ import type { ApiKeyUpdate, Settings, VaultCheck } from "../../shared/settings.j
  * The key field is always empty on arrival, because the key is never sent back
  * here. Leaving it empty keeps whatever is stored; typing in it replaces that.
  */
-export function SettingsView() {
+export function SettingsView({ onBack }: { readonly onBack: () => void }) {
 	const [settings, setSettings] = useState<Settings | null>(null);
 	const [baseUrl, setBaseUrl] = useState("");
 	const [apiKey, setApiKey] = useState("");
@@ -44,6 +45,7 @@ export function SettingsView() {
 
 	return (
 		<section className="settings">
+			<Back onClick={onBack} />
 			<h1>The vault</h1>
 			<p className="quiet standfirst">
 				Pressroom reads articles through Obsidian's Local REST API plugin rather than off the disk, so

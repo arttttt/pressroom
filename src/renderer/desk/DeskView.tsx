@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ArticleSummary } from "../../shared/article-summary.js";
 import type { Target } from "../../shared/platform.js";
+import { Destinations } from "../destinations/Destinations.js";
 
 type Desk =
 	| { readonly status: "loading" }
@@ -8,11 +9,12 @@ type Desk =
 	| { readonly status: "failed"; readonly reason: string };
 
 /**
- * Every article against every place it can go.
+ * What can be sent, and what is not ready yet.
  *
- * This is the question the application exists to answer, so it is the first
- * thing on screen: not what an article says — Obsidian shows that better — but
- * where its text is ready and where there is nothing to send.
+ * Split in two because that is the shape of the vault: a couple of articles
+ * worth acting on and a long tail of drafts. Giving both the same weight — a
+ * row each in one long list — buries the two that matter under eleven that do
+ * not.
  */
 export function DeskView({
 	onOpen,
@@ -39,7 +41,7 @@ export function DeskView({
 	if (desk.status === "failed") {
 		return (
 			<div className="pad empty">
-				<p className="notice">Pressroom cannot reach the vault</p>
+				<h1>Pressroom cannot reach the vault</h1>
 				<p className="quiet">{desk.reason}</p>
 				<button type="button" className="btn primary" onClick={onSettings}>
 					Open settings
@@ -48,98 +50,73 @@ export function DeskView({
 		);
 	}
 
+	const ready = desk.articles.filter((article) => article.ready.length > 0);
+	const waiting = desk.articles.filter((article) => article.ready.length === 0);
+
 	if (desk.articles.length === 0) {
 		return (
 			<div className="pad empty">
-				<p className="notice">No articles in the vault yet</p>
+				<h1>Nothing in the vault yet</h1>
 				<p className="quiet">A folder per article, a file per section. Pressroom picks them up from there</p>
 			</div>
 		);
 	}
 
-	// Every article offers the same targets in the same order, so one article's
-	// list gives the columns and they never shift between rows.
-	const columns = desk.articles[0]?.targets ?? [];
-
 	return (
 		<div className="desk">
-			<table>
-				<thead>
-					<tr>
-						<th className="slug">Article</th>
-						{columns.map((target) => (
-							<th key={`${target.platform}-${target.language}`} className="target">
-								<span className="name">{target.displayName}</span>
-								<span className="lang">{target.language}</span>
-							</th>
-						))}
-					</tr>
-				</thead>
-				<tbody>
-					{desk.articles.map((article) => (
-						<Row key={article.slug} article={article} onOpen={onOpen} />
+			{ready.length === 0 ? (
+				<section>
+					<h1>Nothing is ready to send</h1>
+					<p className="quiet">
+						Pressroom assembles an article from its section files. Split one into a{" "}
+						<code>sections/</code> folder with an index naming them in order, and it appears here
+					</p>
+				</section>
+			) : (
+				<section>
+					<Heading label="Ready to send" count={ready.length} />
+					{ready.map((article) => (
+						<button
+							key={article.slug}
+							type="button"
+							className="card"
+							onClick={() => onOpen(article.slug, article.targets)}
+						>
+							<span className="headline">{article.slug}</span>
+							{/* No separate list of languages: the destinations below already
+							    say which language each one takes, and whether it exists. */}
+							<Destinations targets={article.targets} />
+						</button>
 					))}
-				</tbody>
-			</table>
-			<Legend />
+				</section>
+			)}
+
+			{waiting.length > 0 && (
+				<section className="waiting">
+					<Heading label="Not ready" count={waiting.length} />
+					<ul>
+						{waiting.map((article) => (
+							<li key={article.slug}>
+								<button type="button" onClick={() => onOpen(article.slug, article.targets)}>
+									<span className="title">{article.slug}</span>
+									<span className="why">
+										{article.unsplit.length > 0 ? "written as one note" : "no text yet"}
+									</span>
+								</button>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
 		</div>
 	);
 }
 
-function Row({
-	article,
-	onOpen,
-}: {
-	readonly article: ArticleSummary;
-	readonly onOpen: (slug: string, targets: readonly Target[]) => void;
-}) {
-	const nothingReady = article.ready.length === 0;
-	const open = () => onOpen(article.slug, article.targets);
-
+function Heading({ label, count }: { readonly label: string; readonly count: number }) {
 	return (
-		<tr
-			className={nothingReady ? "waiting" : ""}
-			onClick={open}
-			tabIndex={0}
-			onKeyDown={(event) => event.key === "Enter" && open()}
-		>
-			<th className="slug" scope="row">
-				<span className="title">{article.slug}</span>
-				{article.unsplit.length > 0 && (
-					<span className="tag" title="Written as one note, from before the section layout">
-						unsplit {article.unsplit.join(" ")}
-					</span>
-				)}
-				{nothingReady && article.unsplit.length === 0 && <span className="tag">not started</span>}
-			</th>
-			{article.targets.map((target) => (
-				<td key={`${target.platform}-${target.language}`}>
-					<Mark target={target} />
-				</td>
-			))}
-		</tr>
-	);
-}
-
-/**
- * State is carried by the shape as well as the colour, so the desk stays
- * readable to someone who does not separate the two.
- */
-function Mark({ target }: { readonly target: Target }) {
-	const label =
-		target.state === "ready"
-			? `${target.displayName}: ${target.language} text ready`
-			: `${target.displayName}: no ${target.language} text`;
-	return <span className={`mark ${target.state}`} title={label} aria-label={label} />;
-}
-
-function Legend() {
-	return (
-		<p className="legend">
-			<span className="mark ready" /> text ready to send
-			<span className="mark missing" /> nothing written in that language
-			<span className="spacer" />
-			Nothing is published from here yet
-		</p>
+		<h2>
+			{label}
+			<span className="count">{count}</span>
+		</h2>
 	);
 }
