@@ -76,9 +76,15 @@ export function formatPublications(slug: string, publications: readonly Publicat
 }
 
 /**
- * Adds a publication, keeping the record's one rule: a single canonical entry.
+ * Adds a publication, keeping the record's one rule: a single canonical entry
+ * **per language**.
  *
- * The first place an article goes out becomes the one everything else points
+ * Not one per article. A Russian article on Habr is not the original of an
+ * English one on HackerNoon — they are different texts, and pointing one at
+ * the other as canonical tells a search engine they are the same page. What
+ * relates translations is hreflang, not canonical.
+ *
+ * The first place a language goes out becomes the one its announcements point
  * at. Recording the same platform and language again replaces that row rather
  * than adding a second — an article is not published twice to one place, and a
  * corrected address should correct rather than accumulate.
@@ -91,18 +97,37 @@ export function withPublication(
 		(publication) => publication.platform !== added.platform || publication.language !== added.language,
 	);
 
-	// It becomes the canonical one if it was asked to be, or if nothing else is.
-	const canonical = added.canonical || !others.some((publication) => publication.canonical);
+	const sameLanguage = others.filter((publication) => publication.language === added.language);
+	const canonical = added.canonical || !sameLanguage.some((publication) => publication.canonical);
 
 	return [
-		...others.map((publication) => (canonical ? { ...publication, canonical: false } : publication)),
+		...others.map((publication) =>
+			canonical && publication.language === added.language
+				? { ...publication, canonical: false }
+				: publication,
+		),
 		{ ...added, canonical },
 	];
 }
 
-/** The address everything else points at, once there is one. */
-export function canonicalUrl(publications: readonly Publication[]): string | null {
-	return publications.find((publication) => publication.canonical)?.url ?? null;
+/**
+ * The address a language's announcements point at, once there is one.
+ *
+ * `except` leaves out a platform that is about to receive the article: a story
+ * does not declare itself a copy of itself, and HackerNoon's own field is left
+ * blank for an original.
+ */
+export function canonicalUrl(
+	publications: readonly Publication[],
+	language: Language,
+	except?: PlatformId,
+): string | null {
+	return (
+		publications.find(
+			(publication) =>
+				publication.canonical && publication.language === language && publication.platform !== except,
+		)?.url ?? null
+	);
 }
 
 function cells(line: string): readonly string[] {

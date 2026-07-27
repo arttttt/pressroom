@@ -10,14 +10,26 @@ import type { PlatformId } from "./platform.js";
  * and hoping. Each platform's variant arrives with its renderer; inventing
  * fields for editors nobody has looked at yet would be guessing.
  */
-export type Rendered = {
-	readonly platform: "habr";
-	readonly title: string;
-	readonly body: string;
-	/** Habr's own taxonomy. Both are the author's choice, per article. */
-	readonly hubs: readonly string[];
-	readonly tags: readonly string[];
-};
+export type Rendered =
+	| {
+			readonly platform: "habr";
+			readonly title: string;
+			readonly body: string;
+			/** Habr's own taxonomy. Both are the author's choice, per article. */
+			readonly hubs: readonly string[];
+			readonly tags: readonly string[];
+	  }
+	| {
+			readonly platform: "hackernoon";
+			readonly title: string;
+			readonly body: string;
+			/**
+			 * What goes in HackerNoon's "First Seen At" field: where this text was
+			 * published first, or nothing if HackerNoon is the first. It cannot be
+			 * added after the story goes out, so it has to be right before it does.
+			 */
+			readonly firstSeenAt: string | null;
+	  };
 
 /**
  * What came of preparing an article for a platform.

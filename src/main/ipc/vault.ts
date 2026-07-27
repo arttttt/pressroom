@@ -129,8 +129,9 @@ function registerRender(settings: SettingsStore): void {
 		IPC.renderArticle,
 		async (_event, slug: string, platform: PlatformId): Promise<RenderResult> => {
 			try {
-				const { reader } = await connectToVault(await settings.read());
-				return renderFor(await reader.readArticle(slug), platform);
+				const { reader, registry } = await connectToVault(await settings.read());
+				const [article, published] = await Promise.all([reader.readArticle(slug), registry.list(slug)]);
+				return renderFor(article, platform, published);
 			} catch (cause) {
 				if (cause instanceof UnsupportedArticleLayout) {
 					return { kind: "unsupported", platform, reason: cause.message };

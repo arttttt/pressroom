@@ -58,11 +58,14 @@ describe("habrRenderer", () => {
 			hubs: ["linux", "diy"],
 			tags: ["postmarketOS", "OnePlus 3T"],
 		});
+		if (rendered.platform !== "habr") throw new Error("expected a Habr article");
 		expect(rendered.hubs).toEqual(["linux", "diy"]);
 		expect(rendered.tags).toEqual(["postmarketOS", "OnePlus 3T"]);
 	});
 
 	it("reports no hubs as none rather than as an empty string", () => {
-		expect(habrRenderer.render(ARTICLE, NOTHING).hubs).toEqual([]);
+		const rendered = habrRenderer.render(ARTICLE, NOTHING);
+		if (rendered.platform !== "habr") throw new Error("expected a Habr article");
+		expect(rendered.hubs).toEqual([]);
 	});
 });

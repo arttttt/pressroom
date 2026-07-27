@@ -58,17 +58,25 @@ describe("withPublication", () => {
 		expect(added[0]?.canonical).toBe(true);
 	});
 
-	it("leaves the canonical one alone when another place is added", () => {
-		const list = withPublication([HABR], REDDIT);
-		expect(list.find((publication) => publication.platform === "habr")?.canonical).toBe(true);
-		expect(list.find((publication) => publication.platform === "reddit")?.canonical).toBe(false);
+	it("leaves a language's canonical alone when a second place takes that language", () => {
+		const second = { ...REDDIT, platform: "hackernoon" as const, url: "https://hackernoon.com/x" };
+		const list = withPublication([{ ...REDDIT, canonical: true }], second);
+		expect(list.find((publication) => publication.platform === "reddit")?.canonical).toBe(true);
+		expect(list.find((publication) => publication.platform === "hackernoon")?.canonical).toBe(false);
 	});
 
-	it("moves canonical rather than having two, when one is asked for", () => {
-		// Exactly one address is the address; the announcements point at it.
-		const list = withPublication([HABR], { ...REDDIT, canonical: true });
+	it("moves canonical rather than having two in one language, when one is asked for", () => {
+		// Exactly one address per language is the address its announcements use.
+		const english = { ...REDDIT, canonical: true };
+		const list = withPublication([english], {
+			platform: "hackernoon",
+			language: "en",
+			url: "https://hackernoon.com/x",
+			publishedAt: "2026-07-29",
+			canonical: true,
+		});
 		expect(list.filter((publication) => publication.canonical)).toHaveLength(1);
-		expect(list.find((publication) => publication.canonical)?.platform).toBe("reddit");
+		expect(list.find((publication) => publication.canonical)?.platform).toBe("hackernoon");
 	});
 
 	it("corrects an address rather than recording the same place twice", () => {
@@ -82,15 +90,50 @@ describe("withPublication", () => {
 		const english = { ...HABR, language: "en" as const, url: "https://habr.com/en/articles/1/" };
 		expect(withPublication([HABR], english)).toHaveLength(2);
 	});
+
+	it("gives each language its own canonical, not one for the article", () => {
+		// Pointing an English story at a Russian one as canonical tells a search
+		// engine they are the same page. They are not.
+		const english = { ...REDDIT, canonical: false };
+		const both = withPublication([HABR], english);
+		expect(both.filter((publication) => publication.canonical)).toHaveLength(2);
+		expect(both.find((publication) => publication.language === "ru")?.canonical).toBe(true);
+		expect(both.find((publication) => publication.language === "en")?.canonical).toBe(true);
+	});
+
+	it("moves canonical only within the language it was asked for", () => {
+		const secondEnglish = {
+			platform: "hackernoon" as const,
+			language: "en" as const,
+			url: "https://hackernoon.com/x",
+			publishedAt: "2026-07-29",
+			canonical: true,
+		};
+		const all = withPublication(withPublication([HABR], { ...REDDIT, canonical: true }), secondEnglish);
+		expect(all.find((publication) => publication.platform === "habr")?.canonical).toBe(true);
+		expect(all.find((publication) => publication.platform === "reddit")?.canonical).toBe(false);
+		expect(all.find((publication) => publication.platform === "hackernoon")?.canonical).toBe(true);
+	});
 });
 
 describe("canonicalUrl", () => {
-	it("gives the address the announcements will point at", () => {
-		expect(canonicalUrl([HABR, REDDIT])).toBe(HABR.url);
+	it("gives the address a language's announcements will point at", () => {
+		expect(canonicalUrl([HABR, REDDIT], "ru")).toBe(HABR.url);
 	});
 
-	it("gives nothing while the article is still unpublished", () => {
-		// Which is why Reddit, Hacker News and Hackaday cannot be prepared yet.
-		expect(canonicalUrl([])).toBeNull();
+	it("does not offer another language's address", () => {
+		// A Russian article on Habr is not the original of an English one.
+		expect(canonicalUrl([HABR], "en")).toBeNull();
+	});
+
+	it("leaves out a platform that is about to receive the article", () => {
+		// A story does not declare itself a copy of itself.
+		const english = { ...REDDIT, canonical: true };
+		expect(canonicalUrl([english], "en", "reddit")).toBeNull();
+		expect(canonicalUrl([english], "en")).toBe(english.url);
+	});
+
+	it("gives nothing while the language is still unpublished", () => {
+		expect(canonicalUrl([], "en")).toBeNull();
 	});
 });

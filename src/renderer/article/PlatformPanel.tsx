@@ -1,7 +1,45 @@
 import { useEffect, useState } from "react";
 import type { PlatformId } from "../../shared/platform.js";
-import type { RenderResult } from "../../shared/rendered.js";
+import type { Rendered, RenderResult } from "../../shared/rendered.js";
 import { BodyViews } from "./BodyViews.js";
+
+/**
+ * What each editor needs doing by hand, said where it is needed rather than
+ * left to be remembered.
+ */
+const NOTE = {
+	habr: "Habr renders this only with Markdown mode switched on in its editor's settings, which has to be done before the text is pasted",
+	hackernoon:
+		"HackerNoon takes Markdown in Editor 3.0, and the story is submitted for review rather than published — so it goes out days later, and is worth recording here only once it does",
+} as const;
+
+/** The fields belonging to one platform and to no other. */
+function Fields({ rendered }: { readonly rendered: Rendered }) {
+	if (rendered.platform === "habr") {
+		return (
+			<>
+				<dt>Hubs</dt>
+				<dd className={rendered.hubs.length === 0 ? "quiet" : ""}>
+					{rendered.hubs.length === 0 ? "chosen when publishing" : rendered.hubs.join(", ")}
+				</dd>
+				<dt>Tags</dt>
+				<dd className={rendered.tags.length === 0 ? "quiet" : ""}>
+					{rendered.tags.length === 0 ? "chosen when publishing" : rendered.tags.join(", ")}
+				</dd>
+			</>
+		);
+	}
+
+	return (
+		<>
+			<dt>First seen at</dt>
+			<dd className={rendered.firstSeenAt === null ? "quiet" : ""}>
+				{rendered.firstSeenAt ??
+					"left blank — nothing in English has gone out yet, so this is the original"}
+			</dd>
+		</>
+	);
+}
 
 /**
  * What one platform will actually be handed.
@@ -44,21 +82,9 @@ export function PlatformPanel({
 			<dl className="platform-fields">
 				<dt>Title field</dt>
 				<dd>{result.rendered.title}</dd>
-
-				<dt>Hubs</dt>
-				<dd className={result.rendered.hubs.length === 0 ? "quiet" : ""}>
-					{result.rendered.hubs.length === 0 ? "chosen when publishing" : result.rendered.hubs.join(", ")}
-				</dd>
-
-				<dt>Tags</dt>
-				<dd className={result.rendered.tags.length === 0 ? "quiet" : ""}>
-					{result.rendered.tags.length === 0 ? "chosen when publishing" : result.rendered.tags.join(", ")}
-				</dd>
+				<Fields rendered={result.rendered} />
 			</dl>
-			<p className="quiet note">
-				Habr renders this only with Markdown mode switched on in its editor's settings, which has to be
-				done before the text is pasted
-			</p>
+			<p className="quiet note">{NOTE[result.rendered.platform]}</p>
 			<BodyViews body={result.rendered.body} startHidden />
 		</div>
 	);

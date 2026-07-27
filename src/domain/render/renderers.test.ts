@@ -24,9 +24,11 @@ describe("rendererFor", () => {
 	});
 
 	it("answers with nothing for a platform whose editor has not been looked at", () => {
-		// Better than a renderer that emits plain Markdown and hopes.
-		expect(rendererFor("hackernoon")).toBeNull();
+		// Better than a renderer that emits plain Markdown and hopes. These three
+		// receive an announcement rather than an article, and have none yet.
 		expect(rendererFor("reddit")).toBeNull();
+		expect(rendererFor("hackernews")).toBeNull();
+		expect(rendererFor("hackaday")).toBeNull();
 	});
 });
 
@@ -49,10 +51,10 @@ describe("renderFor", () => {
 	});
 
 	it("says an editor has not been worked out yet, and which one", () => {
-		const result = renderFor(BOTH, "hackernoon");
+		const result = renderFor(BOTH, "hackernews");
 		expect(result.kind).toBe("unsupported");
 		if (result.kind !== "unsupported") return;
-		expect(result.reason).toContain("HackerNoon");
+		expect(result.reason).toContain("Hacker News");
 	});
 
 	it("tells the two apart, so the interface does not blame the wrong thing", () => {
@@ -69,7 +71,9 @@ describe("renderFor", () => {
 
 	it("leaves hubs and tags empty rather than inventing them", () => {
 		const result = renderFor(BOTH, "habr");
-		if (result.kind !== "rendered") throw new Error("expected a rendered article");
+		if (result.kind !== "rendered" || result.rendered.platform !== "habr") {
+			throw new Error("expected a rendered Habr article");
+		}
 		expect(result.rendered.hubs).toEqual([]);
 		expect(result.rendered.tags).toEqual([]);
 	});

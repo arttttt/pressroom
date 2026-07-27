@@ -109,7 +109,9 @@ describe("ObsidianPublicationRegistry", () => {
 			canonical: false,
 		});
 		expect(both).toHaveLength(2);
-		expect(both.filter((publication) => publication.canonical)).toHaveLength(1);
+		// One canonical per language, not per article: the English text and the
+		// Russian one are different texts, each with its own original.
+		expect(both.filter((publication) => publication.canonical)).toHaveLength(2);
 	});
 
 	it("forgets a publication recorded by mistake", async () => {
