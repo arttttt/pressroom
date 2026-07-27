@@ -19,6 +19,9 @@
 	--quiet: light-dark(#6d737d, #878e9b);
 	--edge: light-dark(#dfe2e6, #242834);
 	--blue: light-dark(#2a5fae, #7ba6ea);
+	/* Gone out. The only colour besides the blue, spent on the one state worth
+	   spotting from across the list. Muted, not a signal lamp. */
+	--done: light-dark(#2e7d4f, #5cb87e);
 
 	--wire: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 	--body: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -360,8 +363,14 @@ main {
 	color: var(--quiet);
 }
 
-.chosen-destination .actions,
-.chosen-destination .published-at,
+/*
+ * The destination's own row of actions — its own, hence the child combinator.
+ * Written as a descendant it also reached the `.actions` inside the recording
+ * form, and there the bottom margin lifted Record and Cancel clear of the
+ * fields they belong to. Style by role, never by where a thing happens to sit.
+ */
+.chosen-destination > .actions,
+.chosen-destination > .published-at,
 .chosen-destination > .quiet {
 	margin-bottom: 14px;
 }
@@ -537,11 +546,22 @@ main {
 	gap: 8px;
 }
 
+/* Held to the fields' height, so the row reads as one band rather than as
+   controls resting near some inputs. */
+.mark-published .btn {
+	height: 28px;
+}
+
 /* A destination already published is stated, not offered. */
 
+/*
+ * Gone out — the same dot as the rest, in the one other colour the palette
+ * has. It was blue with a faint halo, and on a near-black ground a faint halo
+ * is nothing: every destination looked alike whether it had been published or
+ * not, which is the one thing this list exists to tell apart.
+ */
 .mark.published {
-	background: var(--blue);
-	box-shadow: 0 0 0 3px light-dark(#c9d9f2, #1d2c46);
+	background: var(--done);
 }
 
 /* The mark carries state by shape as well as colour. */

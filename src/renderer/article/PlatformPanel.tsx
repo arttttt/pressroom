@@ -52,14 +52,21 @@ function Fields({ rendered }: { readonly rendered: Rendered }) {
 						<span>{rendered.title}</span>
 						<CopyButton text={rendered.title} label="Copy the title" />
 					</dd>
-					<dt>Hubs</dt>
-					<dd className={rendered.hubs.length === 0 ? "quiet" : ""}>
-						{rendered.hubs.length === 0 ? "chosen when publishing" : rendered.hubs.join(", ")}
-					</dd>
-					<dt>Tags</dt>
-					<dd className={rendered.tags.length === 0 ? "quiet" : ""}>
-						{rendered.tags.length === 0 ? "chosen when publishing" : rendered.tags.join(", ")}
-					</dd>
+					{/* Only where there is something to carry across. Empty, they
+					    said "chosen when publishing" on every article forever —
+					    a row that never changes and never asks for anything. */}
+					{rendered.hubs.length > 0 && (
+						<>
+							<dt>Hubs</dt>
+							<dd>{rendered.hubs.join(", ")}</dd>
+						</>
+					)}
+					{rendered.tags.length > 0 && (
+						<>
+							<dt>Tags</dt>
+							<dd>{rendered.tags.join(", ")}</dd>
+						</>
+					)}
 				</>
 			);
 		case "hackernoon":

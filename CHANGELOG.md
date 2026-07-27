@@ -7,6 +7,17 @@ two are told apart.
 
 Patch for a fix, minor for something new, while the first digit stays 0.
 
+## 0.0.3
+
+- A destination an article has already gone to is green in the list. It was
+  blue with a faint halo, which on a near-black ground is blue — every
+  destination looked alike whether it had been published or not.
+- Record and Cancel line up with the fields they belong to. A margin meant for
+  the destination's own row of actions was reaching into the recording form and
+  lifting them clear of it.
+- Habr no longer shows Hubs and Tags reading "chosen when publishing" on every
+  article. They appear when there is something to put in them.
+
 ## 0.0.2
 
 - HackerNoon receives the article as a document rather than as a wall of

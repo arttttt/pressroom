@@ -14,6 +14,13 @@ export type Chosen =
 	| { readonly kind: "document"; readonly language: string }
 	| { readonly kind: "destination"; readonly target: Target };
 
+/** What a mark stands for, since a shape alone is a thing to learn. */
+const MEANS = {
+	published: "Already out",
+	ready: "Ready to send",
+	missing: "Nothing written in this language",
+} as const;
+
 export function ArticleAside({
 	documents,
 	targets,
@@ -58,7 +65,7 @@ export function ArticleAside({
 							}
 							onClick={() => onChoose({ kind: "destination", target })}
 						>
-							<span className={`mark ${target.state}`} />
+							<span className={`mark ${target.state}`} title={MEANS[target.state]} />
 							<span className="what">{target.displayName}</span>
 							<span className="lang">{target.language}</span>
 						</button>
