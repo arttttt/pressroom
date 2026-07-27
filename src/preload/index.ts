@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { PageState } from "../shared/browser.js";
 import { IPC, type PressroomApi } from "../shared/ipc.js";
 
 /**
@@ -19,6 +20,19 @@ const api: PressroomApi = {
 	recordPublication: (slug, publication) => ipcRenderer.invoke(IPC.recordPublication, slug, publication),
 	forgetPublication: (slug, platform, language) =>
 		ipcRenderer.invoke(IPC.forgetPublication, slug, platform, language),
+	openPlatform: (platform, bounds) => ipcRenderer.invoke(IPC.openPlatform, platform, bounds),
+	movePlatform: (bounds) => ipcRenderer.invoke(IPC.movePlatform, bounds),
+	closePlatform: () => ipcRenderer.invoke(IPC.closePlatform),
+	navigatePlatform: (where) => ipcRenderer.invoke(IPC.navigatePlatform, where),
+	onPlatformState: (listener) => {
+		// The listener is wrapped, so what is handed to `off` is the same
+		// function that was registered — otherwise the interface can subscribe
+		// but never stop, and a screen it has left goes on being told about a
+		// page it no longer shows.
+		const forward = (_event: unknown, state: PageState) => listener(state);
+		ipcRenderer.on(IPC.platformState, forward);
+		return () => ipcRenderer.off(IPC.platformState, forward);
+	},
 };
 
 contextBridge.exposeInMainWorld("pressroom", api);

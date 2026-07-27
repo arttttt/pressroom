@@ -17,12 +17,15 @@ export function DestinationPanel({
 	today,
 	onRecord,
 	onForget,
+	onOpen,
 }: {
 	readonly slug: string;
 	readonly target: Target;
 	readonly today: string;
 	readonly onRecord: (publication: Publication) => Promise<void>;
 	readonly onForget: (target: Target) => Promise<void>;
+	/** Shows the platform's own page, for the platforms that have one. */
+	readonly onOpen: (target: Target) => void;
 }) {
 	const [marking, setMarking] = useState(false);
 
@@ -49,7 +52,7 @@ export function DestinationPanel({
 				</p>
 			)}
 
-			{target.state === "ready" &&
+			{target.state !== "missing" &&
 				(marking ? (
 					<MarkPublished
 						target={target}
@@ -62,9 +65,18 @@ export function DestinationPanel({
 					/>
 				) : (
 					<div className="actions">
-						<button type="button" className="btn small" onClick={() => setMarking(true)}>
-							Mark published
-						</button>
+						{/* A published article is still worth opening — its editor is
+						    where a correction goes. */}
+						{target.delivery === "browser" && (
+							<button type="button" className="btn small primary" onClick={() => onOpen(target)}>
+								Open {target.displayName}
+							</button>
+						)}
+						{target.state === "ready" && (
+							<button type="button" className="btn small" onClick={() => setMarking(true)}>
+								Mark published
+							</button>
+						)}
 					</div>
 				))}
 

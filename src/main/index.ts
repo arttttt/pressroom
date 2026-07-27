@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
+import { registerBrowserHandlers } from "./ipc/browser.js";
 import { registerVaultHandlers } from "./ipc/vault.js";
 import { keychainCipher } from "./settings/cipher.js";
 import { SettingsStore } from "./settings/store.js";
@@ -15,6 +16,7 @@ void app.whenReady().then(() => {
 	// down rather than reached for from inside the store.
 	const settings = new SettingsStore(join(app.getPath("userData"), "settings.json"), keychainCipher());
 	registerVaultHandlers(settings);
+	registerBrowserHandlers();
 	createMainWindow();
 
 	app.on("activate", () => {
