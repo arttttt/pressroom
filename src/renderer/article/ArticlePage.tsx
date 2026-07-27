@@ -3,7 +3,6 @@ import type { ArticleResult, AssembledDocument } from "../../shared/article-resu
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
 import { Back } from "../Back.js";
-import { PlatformScreen } from "../platform/PlatformScreen.js";
 import { ArticleAside, type Chosen } from "./ArticleAside.js";
 import { BodyViews } from "./BodyViews.js";
 import { DestinationPanel } from "./DestinationPanel.js";
@@ -33,11 +32,6 @@ export function ArticlePage({
 	const [chosen, setChosen] = useState<Chosen | null>(null);
 	// Same reason as on the desk: Obsidian may have come back since.
 	const [attempt, setAttempt] = useState(0);
-	// A platform's page is shown from here rather than from the application's
-	// screens, so that coming back from it finds the article as it was left —
-	// the destination still chosen, and a publication recorded a moment ago
-	// still recorded.
-	const [opened, setOpened] = useState<Target | null>(null);
 
 	useEffect(() => {
 		let listening = true;
@@ -67,25 +61,6 @@ export function ArticlePage({
 	const showing = chosen ?? (documents[0] === undefined ? null : { kind: "document" as const, language: documents[0].language });
 	const document = showing?.kind === "document" ? documents.find((entry) => entry.language === showing.language) : undefined;
 	const target = showing?.kind === "destination" ? here.find((entry) => entry.platform === showing.target.platform) : undefined;
-
-	// Escape leaves the platform's page for the article rather than leaving the
-	// article for the desk. Registered on the way down, where it runs before
-	// the screen-level listener that would otherwise skip a level — the order
-	// listeners were added in cannot be relied on, the phase can.
-	useEffect(() => {
-		if (opened === null) return;
-		const onKey = (event: KeyboardEvent) => {
-			if (event.key !== "Escape") return;
-			event.stopPropagation();
-			setOpened(null);
-		};
-		window.addEventListener("keydown", onKey, true);
-		return () => window.removeEventListener("keydown", onKey, true);
-	}, [opened]);
-
-	if (opened !== null) {
-		return <PlatformScreen target={opened} onBack={() => setOpened(null)} />;
-	}
 
 	return (
 		<article className="article">
@@ -143,7 +118,7 @@ export function ArticlePage({
 											),
 										)
 									}
-									onOpen={setOpened}
+									onOpen={(where) => void window.pressroom.openEditor(where.platform)}
 								/>
 							)}
 						</div>

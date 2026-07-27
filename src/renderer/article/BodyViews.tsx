@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { OutlineEntry } from "../../shared/article-result.js";
+import { CopyButton } from "../CopyButton.js";
 import { Contents } from "../preview/Contents.js";
 import { renderMarkdown } from "../preview/markdown.js";
 import { splitSource } from "../preview/source.js";
@@ -33,7 +34,6 @@ export function BodyViews({
 	const [view, setView] = useState<View>(
 		startHidden ? "hidden" : outline === undefined ? "preview" : "outline",
 	);
-	const [copied, setCopied] = useState(false);
 
 	// Parsing twenty thousand characters is not something to redo because a
 	// button said "Copied" — and the contents re-renders with every section
@@ -51,12 +51,6 @@ export function BodyViews({
 	];
 
 	const sections = outline?.length ?? preview.sections.length;
-
-	async function copy() {
-		await navigator.clipboard.writeText(body);
-		setCopied(true);
-		window.setTimeout(() => setCopied(false), 1600);
-	}
 
 	return (
 		<>
@@ -90,9 +84,7 @@ export function BodyViews({
 					{sections} sections · {body.length.toLocaleString("en")} characters
 				</span>
 
-				<button type="button" className="btn small primary" onClick={() => void copy()}>
-					{copied ? "Copied" : "Copy"}
-				</button>
+				<CopyButton text={body} label="Copy the text" primary />
 			</div>
 
 			{view === "outline" && outline !== undefined && (

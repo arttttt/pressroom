@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PlatformId } from "../../shared/platform.js";
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
+import { CopyButton } from "../CopyButton.js";
 import { BodyViews } from "./BodyViews.js";
 
 /**
@@ -72,7 +73,10 @@ function Fields({ rendered }: { readonly rendered: Rendered }) {
 			return (
 				<>
 					<dt>Title field</dt>
-					<dd>{rendered.title}</dd>
+					<dd className="takeable">
+						<span>{rendered.title}</span>
+						<CopyButton text={rendered.title} label="Copy the title" />
+					</dd>
 					<dt>Hubs</dt>
 					<dd className={rendered.hubs.length === 0 ? "quiet" : ""}>
 						{rendered.hubs.length === 0 ? "chosen when publishing" : rendered.hubs.join(", ")}
@@ -87,12 +91,19 @@ function Fields({ rendered }: { readonly rendered: Rendered }) {
 			return (
 				<>
 					<dt>Title field</dt>
-					<dd>{rendered.title}</dd>
-					<dt>First seen at</dt>
-					<dd className={rendered.firstSeenAt === null ? "quiet" : ""}>
-						{rendered.firstSeenAt ??
-							"left blank — nothing in English has gone out yet, so this is the original"}
+					<dd className="takeable">
+						<span>{rendered.title}</span>
+						<CopyButton text={rendered.title} label="Copy the title" />
 					</dd>
+					<dt>First seen at</dt>
+					{rendered.firstSeenAt === null ? (
+						<dd className="quiet">left blank — this is the original</dd>
+					) : (
+						<dd className="takeable">
+							<span>{rendered.firstSeenAt}</span>
+							<CopyButton text={rendered.firstSeenAt} label="Copy" />
+						</dd>
+					)}
 				</>
 			);
 		case "reddit":
@@ -129,23 +140,12 @@ function Announcement({
 	readonly rendered: Extract<Rendered, { platform: "reddit" | "hackernews" }>;
 }) {
 	const words = rendered.platform === "reddit" ? rendered.comment : null;
-	const [copied, setCopied] = useState<"title" | "link" | "words" | null>(null);
-
-	async function copy(what: "title" | "link" | "words", text: string) {
-		await navigator.clipboard.writeText(text);
-		setCopied(what);
-		window.setTimeout(() => setCopied(null), 1600);
-	}
 
 	return (
 		<div className="announcement">
 			<div className="toolbar">
-				<button type="button" className="btn small" onClick={() => void copy("title", rendered.title)}>
-					{copied === "title" ? "Copied" : "Copy title"}
-				</button>
-				<button type="button" className="btn small primary" onClick={() => void copy("link", rendered.url)}>
-					{copied === "link" ? "Copied" : "Copy link"}
-				</button>
+				<CopyButton text={rendered.title} label="Copy title" />
+				<CopyButton text={rendered.url} label="Copy link" primary />
 			</div>
 			{words === null ? (
 				rendered.platform === "reddit" && (
@@ -157,9 +157,7 @@ function Announcement({
 				<>
 					<p className="comment">{words}</p>
 					<div className="toolbar">
-						<button type="button" className="btn small" onClick={() => void copy("words", words)}>
-							{copied === "words" ? "Copied" : "Copy the comment"}
-						</button>
+						<CopyButton text={words} label="Copy the comment" />
 					</div>
 				</>
 			)}
@@ -169,8 +167,6 @@ function Announcement({
 
 /** A tip to an editor's inbox, opened in the mail client for a person to send. */
 function Email({ rendered }: { readonly rendered: Extract<Rendered, { platform: "hackaday" }> }) {
-	const [copied, setCopied] = useState(false);
-
 	return (
 		<div className="announcement">
 			<p className="comment">{rendered.body}</p>
@@ -178,18 +174,7 @@ function Email({ rendered }: { readonly rendered: Extract<Rendered, { platform: 
 				<a className="btn small primary" href={rendered.mailto}>
 					Open in Mail
 				</a>
-				<button
-					type="button"
-					className="btn small"
-					onClick={() =>
-						void navigator.clipboard.writeText(rendered.body).then(() => {
-							setCopied(true);
-							window.setTimeout(() => setCopied(false), 1600);
-						})
-					}
-				>
-					{copied ? "Copied" : "Copy the message"}
-				</button>
+				<CopyButton text={rendered.body} label="Copy the message" />
 			</div>
 		</div>
 	);

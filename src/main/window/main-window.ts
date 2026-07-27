@@ -22,13 +22,13 @@ export function createMainWindow(): BrowserWindow {
 		show: false,
 		titleBarStyle: "hiddenInset",
 		webPreferences: {
-			preload: join(import.meta.dirname, "../preload/index.mjs"),
+			preload: join(import.meta.dirname, "../preload/index.js"),
 			contextIsolation: true,
 			nodeIntegration: false,
-			// An ES-module preload cannot be sandboxed: Electron loads sandboxed
-			// preloads as CommonJS only. Context isolation — the barrier that
-			// actually separates the page from Node — stays on.
-			sandbox: false,
+			// The bridge needs `contextBridge` and `ipcRenderer` and nothing
+			// else, both of which a sandboxed preload has — so the interface's
+			// own window is sandboxed too.
+			sandbox: true,
 		},
 	});
 

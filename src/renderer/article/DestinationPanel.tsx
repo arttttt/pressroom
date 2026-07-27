@@ -6,7 +6,7 @@ import { PlatformPanel } from "./PlatformPanel.js";
 
 const HOW = {
 	api: "posted through its API",
-	browser: "filled into its editor",
+	browser: "pasted into its editor",
 	email: "sent as an email",
 } as const;
 
@@ -24,7 +24,7 @@ export function DestinationPanel({
 	readonly today: string;
 	readonly onRecord: (publication: Publication) => Promise<void>;
 	readonly onForget: (target: Target) => Promise<void>;
-	/** Shows the platform's own page, for the platforms that have one. */
+	/** Opens the platform's editor in the browser the person already uses. */
 	readonly onOpen: (target: Target) => void;
 }) {
 	const [marking, setMarking] = useState(false);
@@ -67,7 +67,7 @@ export function DestinationPanel({
 						    where a correction goes. */}
 						{target.delivery === "browser" && (
 							<button type="button" className="btn small primary" onClick={() => onOpen(target)}>
-								Open {target.displayName}
+								Open {target.displayName} in the browser
 							</button>
 						)}
 						{target.state === "ready" && (

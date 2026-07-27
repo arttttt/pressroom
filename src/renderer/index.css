@@ -695,6 +695,17 @@ main {
 	font-size: 13px;
 }
 
+/* A field with its own way of being taken: the value, then the control. */
+.platform-fields dd.takeable {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+}
+
+.platform-fields dd.takeable span {
+	min-width: 0;
+}
+
 .platform-fields dd a {
 	color: var(--blue);
 	overflow-wrap: anywhere;
@@ -1135,71 +1146,6 @@ button:disabled {
 
 .result.bad {
 	color: light-dark(#8a5d17, #d3a25a);
-}
-
-/*
- * A platform's own page, inside this window.
- *
- * Everything here is the frame around a hole. The page itself is a native view
- * painted over `.platform-page`, so nothing may be drawn in that space or
- * overlap it — it would be behind the page. Hence a bar above rather than
- * controls floating on it.
- */
-
-.platform {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-}
-
-.platform-bar {
-	display: flex;
-	align-items: baseline;
-	gap: 14px;
-	padding: 12px 18px;
-	border-bottom: 1px solid var(--edge);
-}
-
-.platform-bar h2 {
-	margin: 0;
-	font-family: var(--editorial);
-	font-size: 17px;
-	font-weight: 500;
-}
-
-.platform-bar .address {
-	flex: 1;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	color: var(--quiet);
-	font-family: var(--wire);
-	font-size: 11px;
-}
-
-.platform-actions {
-	display: flex;
-	gap: 8px;
-	align-self: center;
-}
-
-.platform-note {
-	margin: 0;
-	padding: 10px 18px 0;
-	max-width: 62ch;
-}
-
-.platform-page {
-	flex: 1;
-	min-height: 0;
-	margin: 12px 18px 18px;
-	border: 1px solid var(--edge);
-	border-radius: 8px;
-	/* Empty on purpose. Until the page arrives this reads as a surface waiting
-	   for it rather than as a hole in the window. */
-	background: var(--card);
-	overflow: hidden;
 }
 
 @media (prefers-reduced-motion: no-preference) {

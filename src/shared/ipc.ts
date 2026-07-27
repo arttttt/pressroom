@@ -1,7 +1,6 @@
 import type { ArticleResult } from "./article-result.js";
 import type { ArticleSummary } from "./article-summary.js";
 import type { Language } from "./article.js";
-import type { Navigation, PageState, ViewBounds } from "./browser.js";
 import type { PlatformId } from "./platform.js";
 import type { Publication } from "./publication.js";
 import type { RenderResult } from "./rendered.js";
@@ -21,12 +20,7 @@ export const IPC = {
 	listPublications: "publications:list",
 	recordPublication: "publications:record",
 	forgetPublication: "publications:forget",
-	openPlatform: "platform:open",
-	movePlatform: "platform:move",
-	closePlatform: "platform:close",
-	navigatePlatform: "platform:navigate",
-	/** Pushed by the main process as the page navigates, not asked for. */
-	platformState: "platform:state",
+	openEditor: "platform:open-editor",
 } as const;
 
 /**
@@ -57,18 +51,11 @@ export interface PressroomApi {
 	): Promise<readonly Publication[]>;
 
 	/**
-	 * Brings the platform's own page into the window, in the space the
-	 * interface has left for it, and answers with what that page is.
+	 * Opens that platform's editor in the browser the person already uses,
+	 * where they are already signed in.
 	 *
-	 * The page is a native view over the interface rather than an element in
-	 * it, so these four calls are the whole of what the interface can do with
-	 * it: put it somewhere, move it, take it away, and walk it between the
-	 * platform's own pages.
+	 * A platform, not an address: the addresses live in the platform table, so
+	 * the interface cannot send the browser somewhere it was not built to go.
 	 */
-	openPlatform(platform: PlatformId, bounds: ViewBounds): Promise<PageState>;
-	movePlatform(bounds: ViewBounds): Promise<void>;
-	closePlatform(): Promise<void>;
-	navigatePlatform(where: Navigation): Promise<void>;
-	/** Follows the page as it navigates. Answers with the way to stop. */
-	onPlatformState(listener: (state: PageState) => void): () => void;
+	openEditor(platform: PlatformId): Promise<void>;
 }
