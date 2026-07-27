@@ -1,4 +1,4 @@
-import { clipboard, ipcMain, shell } from "electron";
+import { app, clipboard, ipcMain, shell } from "electron";
 import { editorUrlFor, PLATFORMS } from "../../domain/platforms/registry.js";
 import { submissionUrlFor } from "../../domain/platforms/submission.js";
 import { IPC } from "../../shared/ipc.js";
@@ -39,6 +39,8 @@ export function registerBrowserHandlers(settings: SettingsStore): void {
 			);
 		},
 	);
+
+	ipcMain.handle(IPC.version, (): string => app.getVersion());
 
 	ipcMain.handle(IPC.copy, (_event, text: string, html?: string): void => {
 		// Electron's own clipboard rather than the page's, because this writes

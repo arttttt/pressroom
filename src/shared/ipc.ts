@@ -23,6 +23,7 @@ export const IPC = {
 	openEditor: "platform:open-editor",
 	listPlatforms: "platform:list",
 	copy: "clipboard:copy",
+	version: "app:version",
 } as const;
 
 /**
@@ -72,4 +73,12 @@ export interface PressroomApi {
 	 * pasted wall of characters.
 	 */
 	copy(text: string, html?: string): Promise<void>;
+	/**
+	 * Which build this is.
+	 *
+	 * A copy installed in /Applications and a copy running from the checkout
+	 * look identical from the outside, and the one in /Applications is months
+	 * old the moment something is fixed here. It has to be able to say so.
+	 */
+	version(): Promise<string>;
 }

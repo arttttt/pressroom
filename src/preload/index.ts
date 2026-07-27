@@ -22,6 +22,7 @@ const api: PressroomApi = {
 	openEditor: (slug, platform) => ipcRenderer.invoke(IPC.openEditor, slug, platform),
 	listPlatforms: () => ipcRenderer.invoke(IPC.listPlatforms),
 	copy: (text, html) => ipcRenderer.invoke(IPC.copy, text, html),
+	version: () => ipcRenderer.invoke(IPC.version),
 };
 
 contextBridge.exposeInMainWorld("pressroom", api);

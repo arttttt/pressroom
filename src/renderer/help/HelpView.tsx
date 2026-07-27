@@ -15,12 +15,14 @@ import { Back } from "../Back.js";
  */
 export function HelpView({ onBack }: { readonly onBack: () => void }) {
 	const [platforms, setPlatforms] = useState<readonly PlatformSummary[]>([]);
+	const [version, setVersion] = useState("");
 
 	// Asked for rather than listed here, so that adding a platform to the table
 	// adds it to this screen and cannot be forgotten.
 	useEffect(() => {
 		let listening = true;
 		void window.pressroom.listPlatforms().then((known) => listening && setPlatforms(known));
+		void window.pressroom.version().then((built) => listening && setVersion(built));
 		return () => {
 			listening = false;
 		};
@@ -29,7 +31,12 @@ export function HelpView({ onBack }: { readonly onBack: () => void }) {
 	return (
 		<div className="help pad">
 			<Back onClick={onBack} />
-			<h1>The five destinations</h1>
+			<h1>
+				The five destinations
+				{/* Which build this is. The copy in /Applications and the one the
+				    checkout runs look identical from the outside. */}
+				{version !== "" && <span className="version">{version}</span>}
+			</h1>
 
 			<div className="about">
 				{ABOUT.map((paragraph) => (
