@@ -1,6 +1,7 @@
 import type { ArticleDocument } from "../../shared/article.js";
 import type { PlatformId } from "../../shared/platform.js";
 import type { Rendered } from "../../shared/rendered.js";
+import type { Announcement } from "../announce/announcement.js";
 
 export type { Rendered };
 
@@ -16,6 +17,11 @@ export interface RenderContext {
 	readonly canonicalUrl: string | null;
 	readonly hubs: readonly string[];
 	readonly tags: readonly string[];
+	/**
+	 * The author's own words for announcing the article here, where they have
+	 * written any. Only the three announcement platforms read it.
+	 */
+	readonly announcement: Announcement | null;
 }
 
 /**

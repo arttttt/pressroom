@@ -1,7 +1,9 @@
+import { type Announcement, parseAnnouncement } from "../../domain/announce/announcement.js";
 import { parseArticleIndex } from "../../domain/vault/article-index.js";
 import { UnsupportedArticleLayout, type VaultReader } from "../../domain/vault/reader.js";
 import { parseSectionNote } from "../../domain/vault/section-note.js";
 import type { Article, ArticleDocument, Language, Section } from "../../shared/article.js";
+import type { PlatformId } from "../../shared/platform.js";
 import type { VaultHttp } from "./rest-client.js";
 
 const LANGUAGES: readonly Language[] = ["en", "ru"];
@@ -11,6 +13,9 @@ const ARTICLES = "Статьи";
 
 /** The folder whose presence marks an article as written in sections. */
 const SECTIONS = "sections";
+
+/** Where the author keeps a message per platform, one note each. */
+const ANNOUNCEMENTS = "announcements";
 
 /**
  * Reads articles out of the vault through the Local REST API plugin.
@@ -47,6 +52,13 @@ export class ObsidianVaultReader implements VaultReader {
 			}),
 		);
 		return split.filter((language): language is Language => language !== null);
+	}
+
+	async readAnnouncement(slug: string, platform: PlatformId): Promise<Announcement | null> {
+		const note = await this.http
+			.readFile(`${this.articles}/${slug}/${ANNOUNCEMENTS}/${platform}.md`)
+			.catch(() => null);
+		return note === null ? null : parseAnnouncement(note);
 	}
 
 	/**

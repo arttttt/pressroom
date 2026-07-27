@@ -3,7 +3,14 @@ import type { ArticleDocument } from "../../shared/article.js";
 import { habrRenderer } from "./habr.js";
 import type { RenderContext } from "./renderer.js";
 
-const NOTHING: RenderContext = { canonicalUrl: null, hubs: [], tags: [] };
+const NOTHING: RenderContext = { canonicalUrl: null, hubs: [], tags: [], announcement: null };
+
+/** Habr always renders a Habr article; narrowing says so to the type checker. */
+function habr(document: ArticleDocument, context: RenderContext = NOTHING) {
+	const rendered = habrRenderer.render(document, context);
+	if (rendered.platform !== "habr") throw new Error("expected a Habr article");
+	return rendered;
+}
 
 /** The shape the vault's articles actually have: sections with sub-headings. */
 const ARTICLE: ArticleDocument = {
@@ -22,20 +29,20 @@ const ARTICLE: ArticleDocument = {
 
 describe("habrRenderer", () => {
 	it("puts the title in its own field and keeps it out of the body", () => {
-		const rendered = habrRenderer.render(ARTICLE, NOTHING);
+		const rendered = habr(ARTICLE);
 		expect(rendered.title).toBe(ARTICLE.title);
 		expect(rendered.body).not.toContain(ARTICLE.title);
 	});
 
 	it("sets section headings at the second level and their parts at the third", () => {
-		const body = habrRenderer.render(ARTICLE, NOTHING).body;
+		const body = habr(ARTICLE).body;
 		expect(body).toContain("## Зачем старый телефон");
 		expect(body).toContain("### containerd не стартует");
 	});
 
 	it("leaves a shell comment in a snippet as a comment", () => {
 		// Habr takes fenced blocks with a language, so the snippet goes as it is.
-		const body = habrRenderer.render(ARTICLE, NOTHING).body;
+		const body = habr(ARTICLE).body;
 		expect(body).toContain("```sh\n# правим ExecStart");
 	});
 
@@ -47,25 +54,24 @@ describe("habrRenderer", () => {
 			title: "Заголовки",
 			sections: [{ id: "s0", heading: "Раздел", body: "### Слишком глубоко\n\nТекст." }],
 		};
-		const body = habrRenderer.render(deep, NOTHING).body;
+		const body = habr(deep).body;
 		expect(body).toContain("### Слишком глубоко");
 		expect(body).not.toContain("#### ");
 	});
 
 	it("carries the hubs and tags it was given", () => {
-		const rendered = habrRenderer.render(ARTICLE, {
+		const rendered = habr(ARTICLE, {
 			canonicalUrl: null,
 			hubs: ["linux", "diy"],
 			tags: ["postmarketOS", "OnePlus 3T"],
+			announcement: null,
 		});
-		if (rendered.platform !== "habr") throw new Error("expected a Habr article");
 		expect(rendered.hubs).toEqual(["linux", "diy"]);
 		expect(rendered.tags).toEqual(["postmarketOS", "OnePlus 3T"]);
 	});
 
 	it("reports no hubs as none rather than as an empty string", () => {
-		const rendered = habrRenderer.render(ARTICLE, NOTHING);
-		if (rendered.platform !== "habr") throw new Error("expected a Habr article");
+		const rendered = habr(ARTICLE);
 		expect(rendered.hubs).toEqual([]);
 	});
 });

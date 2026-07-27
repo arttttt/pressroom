@@ -39,33 +39,35 @@ const ON_A_BLOG: Publication = {
 };
 
 describe("hackerNoonRenderer", () => {
-	const nothing: RenderContext = { canonicalUrl: null, hubs: [], tags: [] };
+	const nothing: RenderContext = { canonicalUrl: null, hubs: [], tags: [], announcement: null };
+
+	/** HackerNoon always renders a HackerNoon story; narrowing says so. */
+	function hackerNoon(context: RenderContext = nothing) {
+		const rendered = hackerNoonRenderer.render(ENGLISH, context);
+		if (rendered.platform !== "hackernoon") throw new Error("expected a HackerNoon story");
+		return rendered;
+	}
 
 	it("puts the title in its own field and keeps it out of the body", () => {
-		const rendered = hackerNoonRenderer.render(ENGLISH, nothing);
+		const rendered = hackerNoon();
 		expect(rendered.title).toBe(ENGLISH.title);
 		expect(rendered.body).not.toContain(ENGLISH.title);
 	});
 
 	it("sends the Markdown as assembled, which Editor 3.0 takes", () => {
-		const rendered = hackerNoonRenderer.render(ENGLISH, nothing);
+		const rendered = hackerNoon();
 		expect(rendered.body).toContain("## Why an old phone");
 		expect(rendered.body).toContain("### Tailscale");
 		expect(rendered.body).toContain("```sh\n# not a heading");
 	});
 
 	it("leaves First Seen At blank for a story published here first", () => {
-		const rendered = hackerNoonRenderer.render(ENGLISH, nothing);
-		if (rendered.platform !== "hackernoon") throw new Error("expected HackerNoon");
+		const rendered = hackerNoon();
 		expect(rendered.firstSeenAt).toBeNull();
 	});
 
 	it("carries the address the text was first published at", () => {
-		const rendered = hackerNoonRenderer.render(ENGLISH, {
-			...nothing,
-			canonicalUrl: "https://example.com/original",
-		});
-		if (rendered.platform !== "hackernoon") throw new Error("expected HackerNoon");
+		const rendered = hackerNoon({ ...nothing, canonicalUrl: "https://example.com/original" });
 		expect(rendered.firstSeenAt).toBe("https://example.com/original");
 	});
 });
@@ -101,7 +103,9 @@ describe("renderFor, on the canonical address", () => {
 
 	it("still gives Habr the Russian document", () => {
 		const result = renderFor(ARTICLE, "habr", [ON_HABR]);
-		if (result.kind !== "rendered") throw new Error("expected a rendered article");
+		if (result.kind !== "rendered" || result.rendered.platform !== "habr") {
+			throw new Error("expected a rendered Habr article");
+		}
 		expect(result.rendered.title).toBe(RUSSIAN.title);
 	});
 });

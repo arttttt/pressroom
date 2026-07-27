@@ -1,4 +1,6 @@
 import type { Article, Language } from "../../shared/article.js";
+import type { PlatformId } from "../../shared/platform.js";
+import type { Announcement } from "../announce/announcement.js";
 
 /**
  * An article folder that is not in the layout below.
@@ -56,4 +58,12 @@ export interface VaultReader {
 	 * each one.
 	 */
 	splitLanguages(slug: string): Promise<readonly Language[]>;
+	/**
+	 * The author's words for announcing this article on one platform, from
+	 * `<article>/announcements/<platform>.md`, or nothing where none is written.
+	 *
+	 * Absent is the ordinary case and not an error: a link post needs no words,
+	 * and Hacker News takes none at all.
+	 */
+	readAnnouncement(slug: string, platform: PlatformId): Promise<Announcement | null>;
 }

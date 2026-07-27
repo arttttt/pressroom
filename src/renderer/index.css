@@ -672,6 +672,37 @@ main {
 	font-size: 13px;
 }
 
+.platform-fields dd a {
+	color: var(--blue);
+	overflow-wrap: anywhere;
+}
+
+.platform-fields .count {
+	margin-left: 10px;
+	font-family: var(--wire);
+	font-size: 10.5px;
+	color: var(--quiet);
+	white-space: nowrap;
+}
+
+/* A message about the article, as against the article. */
+
+.announcement .comment {
+	margin: 0;
+	padding: 0 16px 14px;
+	max-width: 44em;
+	/* The author wrote the line breaks; they are part of the message. */
+	white-space: pre-wrap;
+}
+
+.announcement .toolbar .btn:first-child {
+	margin-left: 0;
+}
+
+a.btn {
+	text-decoration: none;
+}
+
 .toolbar {
 	display: flex;
 	align-items: center;

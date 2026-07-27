@@ -130,8 +130,12 @@ function registerRender(settings: SettingsStore): void {
 		async (_event, slug: string, platform: PlatformId): Promise<RenderResult> => {
 			try {
 				const { reader, registry } = await connectToVault(await settings.read());
-				const [article, published] = await Promise.all([reader.readArticle(slug), registry.list(slug)]);
-				return renderFor(article, platform, published);
+				const [article, published, announcement] = await Promise.all([
+					reader.readArticle(slug),
+					registry.list(slug),
+					reader.readAnnouncement(slug, platform),
+				]);
+				return renderFor(article, platform, published, announcement);
 			} catch (cause) {
 				if (cause instanceof UnsupportedArticleLayout) {
 					return { kind: "unsupported", platform, reason: cause.message };

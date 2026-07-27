@@ -29,6 +29,28 @@ export type Rendered =
 			 * added after the story goes out, so it has to be right before it does.
 			 */
 			readonly firstSeenAt: string | null;
+	  }
+	// The three below announce an article rather than carry it, so each holds
+	// the address it points at and none of them holds the article's text.
+	| {
+			readonly platform: "reddit";
+			readonly title: string;
+			readonly url: string;
+			/** The author's words to post beneath the link, where they wrote any. */
+			readonly comment: string | null;
+	  }
+	| {
+			readonly platform: "hackernews";
+			readonly title: string;
+			readonly url: string;
+	  }
+	| {
+			readonly platform: "hackaday";
+			readonly to: string;
+			readonly subject: string;
+			readonly body: string;
+			/** The whole message as a link, for handing to a mail client. */
+			readonly mailto: string;
 	  };
 
 /**

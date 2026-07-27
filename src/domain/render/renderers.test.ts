@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Article, ArticleDocument } from "../../shared/article.js";
+import { PLATFORMS } from "../platforms/registry.js";
 import { habrRenderer } from "./habr.js";
 import { renderFor, rendererFor } from "./renderers.js";
 
@@ -23,12 +24,13 @@ describe("rendererFor", () => {
 		expect(rendererFor("habr")).toBe(habrRenderer);
 	});
 
-	it("answers with nothing for a platform whose editor has not been looked at", () => {
-		// Better than a renderer that emits plain Markdown and hopes. These three
-		// receive an announcement rather than an article, and have none yet.
-		expect(rendererFor("reddit")).toBeNull();
-		expect(rendererFor("hackernews")).toBeNull();
-		expect(rendererFor("hackaday")).toBeNull();
+	it("has one for every platform in the table", () => {
+		// The lookup still answers with nothing, and `renderFor` still says so
+		// plainly — that is for the platform added to the table before anyone
+		// works out what its editor takes.
+		for (const platform of PLATFORMS) {
+			expect(rendererFor(platform.id), platform.displayName).not.toBeNull();
+		}
 	});
 });
 
@@ -37,8 +39,7 @@ describe("renderFor", () => {
 		// The article's title is English; Habr gets the Russian document.
 		const result = renderFor(BOTH, "habr");
 		expect(result.kind).toBe("rendered");
-		if (result.kind !== "rendered") return;
-		expect(result.rendered.platform).toBe("habr");
+		if (result.kind !== "rendered" || result.rendered.platform !== "habr") return;
 		expect(result.rendered.title).toBe(RUSSIAN.title);
 	});
 
@@ -50,11 +51,14 @@ describe("renderFor", () => {
 		expect(result.reason).toContain("OnePlus 3T");
 	});
 
-	it("says an editor has not been worked out yet, and which one", () => {
+	it("says an announcement has nowhere to point until the article is out", () => {
+		// Reddit, Hacker News and Hackaday receive a message about the article,
+		// and a message about an article is nothing without an address.
 		const result = renderFor(BOTH, "hackernews");
 		expect(result.kind).toBe("unsupported");
 		if (result.kind !== "unsupported") return;
 		expect(result.reason).toContain("Hacker News");
+		expect(result.reason).toContain("record where it went");
 	});
 
 	it("tells the two apart, so the interface does not blame the wrong thing", () => {

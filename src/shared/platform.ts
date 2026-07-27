@@ -24,10 +24,22 @@ export type Delivery =
 	/** Composed as an email for the person to send. */
 	| { readonly kind: "email"; readonly to: string };
 
+/**
+ * What a platform is given.
+ *
+ * The axis the table was missing. Habr and HackerNoon take the article — the
+ * whole text into their editor. Reddit, Hacker News and Hackaday take a
+ * message about it: a title and a link. The second kind cannot be prepared
+ * until the article is out somewhere and that address is recorded, because a
+ * message about an article is nothing without one.
+ */
+export type Carries = "article" | "announcement";
+
 export interface Platform {
 	readonly id: PlatformId;
 	readonly displayName: string;
 	readonly delivery: Delivery;
+	readonly carries: Carries;
 	/** Languages this platform is used for. */
 	readonly languages: readonly ("en" | "ru")[];
 }
