@@ -22,6 +22,7 @@ export const IPC = {
 	forgetPublication: "publications:forget",
 	openEditor: "platform:open-editor",
 	listPlatforms: "platform:list",
+	copy: "clipboard:copy",
 } as const;
 
 /**
@@ -62,4 +63,13 @@ export interface PressroomApi {
 	openEditor(slug: string, platform: PlatformId): Promise<void>;
 	/** The platforms themselves, for the screen that describes them. */
 	listPlatforms(): Promise<readonly PlatformSummary[]>;
+	/**
+	 * Puts text on the clipboard, optionally in two forms at once.
+	 *
+	 * A clipboard holds several forms of one thing and an editor takes what it
+	 * understands: a plain-text field gets the source, a rich editor gets the
+	 * document. Sending both is the difference between a pasted article and a
+	 * pasted wall of characters.
+	 */
+	copy(text: string, html?: string): Promise<void>;
 }

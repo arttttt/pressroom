@@ -26,10 +26,13 @@ export function BodyViews({
 	body,
 	outline,
 	startHidden = false,
+	html = null,
 }: {
 	readonly body: string;
 	readonly outline?: readonly OutlineEntry[];
 	readonly startHidden?: boolean;
+	/** The same text as a document, where the receiving editor wants one. */
+	readonly html?: string | null;
 }) {
 	const [view, setView] = useState<View>(
 		startHidden ? "hidden" : outline === undefined ? "preview" : "outline",
@@ -84,7 +87,7 @@ export function BodyViews({
 					{sections} sections · {body.length.toLocaleString("en")} characters
 				</span>
 
-				<CopyButton text={body} label="Copy the text" primary />
+				<CopyButton text={body} html={html} label="Copy the text" primary />
 			</div>
 
 			{view === "outline" && outline !== undefined && (

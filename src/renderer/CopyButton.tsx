@@ -7,20 +7,26 @@ import { useState } from "react";
  * body, an address. That gesture is the same everywhere, so it is one control
  * — and it says what it took, because a panel with four buttons all reading
  * "Copy" leaves you guessing which one you pressed.
+ *
+ * `html` is the same text as a document rather than as its source, for the
+ * editors that want one. Both forms go on the clipboard together and the
+ * receiving editor takes whichever it understands.
  */
 export function CopyButton({
 	text,
+	html = null,
 	label = "Copy",
 	primary = false,
 }: {
 	readonly text: string;
+	readonly html?: string | null;
 	readonly label?: string;
 	readonly primary?: boolean;
 }) {
 	const [copied, setCopied] = useState(false);
 
 	async function copy() {
-		await navigator.clipboard.writeText(text);
+		await (html === null ? window.pressroom.copy(text) : window.pressroom.copy(text, html));
 		setCopied(true);
 		window.setTimeout(() => setCopied(false), 1600);
 	}

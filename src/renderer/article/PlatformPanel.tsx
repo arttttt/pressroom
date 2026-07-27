@@ -1,6 +1,7 @@
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
 import { CopyButton } from "../CopyButton.js";
 import { BodyViews } from "./BodyViews.js";
+import { bodyFlavours } from "./clipboard.js";
 
 /**
  * What has to be done by hand, and nothing else.
@@ -34,7 +35,7 @@ export function PlatformPanel({ result }: { readonly result: RenderResult }) {
 			) : rendered.platform === "reddit" || rendered.platform === "hackernews" ? (
 				<Announcement rendered={rendered} />
 			) : (
-				<BodyViews body={rendered.body} startHidden />
+				<BodyViews body={rendered.body} html={bodyFlavours(rendered).html} startHidden />
 			)}
 		</div>
 	);

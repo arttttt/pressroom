@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
+import { bodyFlavours } from "./clipboard.js";
 import { MarkPublished } from "./MarkPublished.js";
 import { PlatformPanel } from "./PlatformPanel.js";
 
@@ -118,7 +119,10 @@ function Open({
 	const carriesText = rendered.platform === "habr" || rendered.platform === "hackernoon";
 
 	async function open() {
-		if (carriesText && "body" in rendered) await navigator.clipboard.writeText(rendered.body);
+		if (carriesText) {
+			const { text, html } = bodyFlavours(rendered);
+			await (html === null ? window.pressroom.copy(text) : window.pressroom.copy(text, html));
+		}
 		await window.pressroom.openEditor(slug, rendered.platform);
 	}
 

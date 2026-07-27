@@ -1,4 +1,4 @@
-import { ipcMain, shell } from "electron";
+import { clipboard, ipcMain, shell } from "electron";
 import { editorUrlFor, PLATFORMS } from "../../domain/platforms/registry.js";
 import { submissionUrlFor } from "../../domain/platforms/submission.js";
 import { IPC } from "../../shared/ipc.js";
@@ -39,6 +39,13 @@ export function registerBrowserHandlers(settings: SettingsStore): void {
 			);
 		},
 	);
+
+	ipcMain.handle(IPC.copy, (_event, text: string, html?: string): void => {
+		// Electron's own clipboard rather than the page's, because this writes
+		// two forms at once and because a packaged renderer runs from a file
+		// address, where the page's clipboard is not something to depend on.
+		clipboard.write(html === undefined ? { text } : { text, html });
+	});
 
 	ipcMain.handle(
 		IPC.listPlatforms,
