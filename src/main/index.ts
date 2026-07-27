@@ -16,7 +16,7 @@ void app.whenReady().then(() => {
 	// down rather than reached for from inside the store.
 	const settings = new SettingsStore(join(app.getPath("userData"), "settings.json"), keychainCipher());
 	registerVaultHandlers(settings);
-	registerBrowserHandlers();
+	registerBrowserHandlers(settings);
 	createMainWindow();
 
 	app.on("activate", () => {

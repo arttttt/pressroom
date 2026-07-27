@@ -1,13 +1,7 @@
-import { useEffect, useState } from "react";
-import type { PlatformId } from "../../shared/platform.js";
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
 import { CopyButton } from "../CopyButton.js";
 import { BodyViews } from "./BodyViews.js";
 
-/**
- * What each editor needs doing by hand, said where it is needed rather than
- * left to be remembered.
- */
 /**
  * What has to be done by hand, and nothing else.
  *
@@ -19,27 +13,7 @@ const NOTE: Partial<Readonly<Record<Rendered["platform"], string>>> = {
 	hackernews: "Hacker News caps the title length; shorten a long one by hand",
 };
 
-export function PlatformPanel({
-	slug,
-	platform,
-}: {
-	readonly slug: string;
-	readonly platform: PlatformId;
-}) {
-	const [result, setResult] = useState<RenderResult | null>(null);
-
-	useEffect(() => {
-		let listening = true;
-		setResult(null);
-		void window.pressroom
-			.renderArticle(slug, platform)
-			.then((rendered) => listening && setResult(rendered));
-		return () => {
-			listening = false;
-		};
-	}, [slug, platform]);
-
-	if (result === null) return <p className="quiet">Preparing…</p>;
+export function PlatformPanel({ result }: { readonly result: RenderResult }) {
 	if (result.kind === "unsupported") return <p className="quiet">{result.reason}</p>;
 	if (result.kind === "failed") return <p className="failed">{result.reason}</p>;
 

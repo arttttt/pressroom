@@ -51,11 +51,12 @@ export interface PressroomApi {
 	): Promise<readonly Publication[]>;
 
 	/**
-	 * Opens that platform's editor in the browser the person already uses,
-	 * where they are already signed in.
+	 * Opens that platform's submission in the browser the person already uses,
+	 * where they are already signed in — carrying whatever fits in an address.
 	 *
-	 * A platform, not an address: the addresses live in the platform table, so
-	 * the interface cannot send the browser somewhere it was not built to go.
+	 * An article and a platform, never an address: the addresses are built in
+	 * the main process from the platform table, so the interface cannot send
+	 * the browser somewhere it was not built to go.
 	 */
-	openEditor(platform: PlatformId): Promise<void>;
+	openEditor(slug: string, platform: PlatformId): Promise<void>;
 }

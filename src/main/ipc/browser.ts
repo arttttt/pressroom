@@ -1,7 +1,10 @@
 import { ipcMain, shell } from "electron";
 import { editorUrlFor } from "../../domain/platforms/registry.js";
+import { submissionUrlFor } from "../../domain/platforms/submission.js";
 import { IPC } from "../../shared/ipc.js";
 import type { PlatformId } from "../../shared/platform.js";
+import type { SettingsStore } from "../settings/store.js";
+import { prepareFor } from "../vault/prepare.js";
 
 /**
  * Opening a platform's editor — in the browser the person already uses.
@@ -22,8 +25,18 @@ import type { PlatformId } from "../../shared/platform.js";
  * platform table, and nothing in the interface can send the browser somewhere
  * it was not built to go.
  */
-export function registerBrowserHandlers(): void {
-	ipcMain.handle(IPC.openEditor, async (_event, platform: PlatformId): Promise<void> => {
-		await shell.openExternal(editorUrlFor(platform));
-	});
+export function registerBrowserHandlers(settings: SettingsStore): void {
+	ipcMain.handle(
+		IPC.openEditor,
+		async (_event, slug: string, platform: PlatformId): Promise<void> => {
+			// The same rendering the panel is showing, from the same function, so
+			// what opens can never be a different article from what was read.
+			const prepared = await prepareFor(settings, slug, platform);
+			// Nothing prepared still has an editor worth opening; the panel has
+			// already said why it is empty.
+			await shell.openExternal(
+				prepared.kind === "rendered" ? submissionUrlFor(prepared.rendered) : editorUrlFor(platform),
+			);
+		},
+	);
 }

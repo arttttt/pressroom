@@ -14,11 +14,14 @@ export type PlatformId =
 	| "hackaday";
 
 export type Delivery =
-	/** Submitted programmatically; no browser involved. */
-	| { readonly kind: "api" }
 	/**
-	 * Opened in a logged-in browser view with the content already filled in.
-	 * The person presses publish.
+	 * Opened in the person's own browser, where they are already signed in —
+	 * carrying what fits in an address, and the rest on the clipboard. They
+	 * press publish.
+	 *
+	 * There was a third kind here, `api`, for Reddit. Nothing used it: Pressroom
+	 * does not publish on its own, and Reddit's submission form takes a title
+	 * and a link as parameters like everyone else's.
 	 */
 	| { readonly kind: "browser"; readonly editorUrl: string }
 	/** Composed as an email for the person to send. */

@@ -118,7 +118,6 @@ export function ArticlePage({
 											),
 										)
 									}
-									onOpen={(where) => void window.pressroom.openEditor(where.platform)}
 								/>
 							)}
 						</div>

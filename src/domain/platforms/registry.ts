@@ -25,7 +25,10 @@ export const PLATFORMS: readonly Platform[] = [
 	{
 		id: "reddit",
 		displayName: "Reddit",
-		delivery: { kind: "api" },
+		// Reddit has a write API, and Pressroom does not use it: nothing here
+		// publishes on its own. Its submission form takes the title and the link
+		// as parameters, which is the same door the others go through.
+		delivery: { kind: "browser", editorUrl: "https://www.reddit.com/submit" },
 		carries: "announcement",
 		languages: ["en"],
 	},

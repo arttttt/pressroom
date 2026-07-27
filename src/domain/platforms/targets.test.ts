@@ -41,7 +41,7 @@ describe("targetsFor", () => {
 	it("carries the delivery kind, so the interface can say how each one is reached", () => {
 		const reddit = targetsFor(["en"]).find((target) => target.platform === "reddit");
 		const hackaday = targetsFor(["en"]).find((target) => target.platform === "hackaday");
-		expect(reddit?.delivery).toBe("api");
+		expect(reddit?.delivery).toBe("browser");
 		expect(hackaday?.delivery).toBe("email");
 	});
 

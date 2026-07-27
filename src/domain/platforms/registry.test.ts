@@ -40,11 +40,10 @@ describe("editorUrlFor", () => {
 		}
 	});
 
-	it("refuses the platforms that have no page, rather than opening a blank one", () => {
-		// Reddit posts through an API and Hackaday takes an email. Asking either
-		// for an editor is a wiring mistake, and a window showing nothing would
-		// hide it.
-		expect(() => editorUrlFor("reddit")).toThrow(/not opened in a browser/);
+	it("refuses a platform that has no page, rather than opening a blank one", () => {
+		// Hackaday is a tip line, not a place to publish: it takes an email and
+		// has no editor. Asking it for one is a wiring mistake, and a browser
+		// opening on nothing would hide it.
 		expect(() => editorUrlFor("hackaday")).toThrow(/not opened in a browser/);
 	});
 });
