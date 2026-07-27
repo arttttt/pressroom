@@ -1,5 +1,7 @@
 import type { Stage } from "../../shared/browser.js";
+import type { Credential } from "../credentials/provider.js";
 import { editorUrlFor } from "../platforms/registry.js";
+import type { FieldFill } from "./fill.js";
 import type { Pilot } from "./pilot.js";
 
 /**
@@ -35,6 +37,26 @@ export const habrPilot: Pilot = {
 		// The editor, wherever the article is going: a new one, one being
 		// written again, or the sandbox a first article has to pass through.
 		return /\/(article|articles|posts|sandbox)\/(new|\d+\/edit)/.test(at.path) ? "editor" : "elsewhere";
+	},
+
+	signIn(credential: Credential): readonly FieldFill[] {
+		// An ordinary form, by their names rather than their classes: the two
+		// fields are called what they hold, and a class is what a redesign moves.
+		// Below them sits a captcha, and after it the button — both untouched.
+		return [
+			{
+				name: "the email",
+				selector: "input[name='email']",
+				value: credential.username,
+				into: "field",
+			},
+			{
+				name: "the password",
+				selector: "input[name='password']",
+				value: credential.password,
+				into: "field",
+			},
+		];
 	},
 };
 

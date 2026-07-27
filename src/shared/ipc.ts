@@ -1,7 +1,7 @@
 import type { ArticleResult } from "./article-result.js";
 import type { ArticleSummary } from "./article-summary.js";
 import type { Language } from "./article.js";
-import type { Navigation, PageState, ViewBounds } from "./browser.js";
+import type { FillResult, Navigation, PageState, ViewBounds } from "./browser.js";
 import type { PlatformId } from "./platform.js";
 import type { Publication } from "./publication.js";
 import type { RenderResult } from "./rendered.js";
@@ -25,6 +25,7 @@ export const IPC = {
 	movePlatform: "platform:move",
 	closePlatform: "platform:close",
 	navigatePlatform: "platform:navigate",
+	signInTo: "platform:sign-in",
 	/** Pushed by the main process as the page navigates, not asked for. */
 	platformState: "platform:state",
 } as const;
@@ -69,6 +70,11 @@ export interface PressroomApi {
 	movePlatform(bounds: ViewBounds): Promise<void>;
 	closePlatform(): Promise<void>;
 	navigatePlatform(where: Navigation): Promise<void>;
+	/**
+	 * Puts the login from the password manager into the platform's sign-in
+	 * form, and stops there. Nothing is submitted.
+	 */
+	signInTo(platform: PlatformId): Promise<FillResult>;
 	/** Follows the page as it navigates. Answers with the way to stop. */
 	onPlatformState(listener: (state: PageState) => void): () => void;
 }

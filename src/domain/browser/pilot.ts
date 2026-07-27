@@ -1,5 +1,7 @@
 import type { Stage } from "../../shared/browser.js";
 import type { PlatformId } from "../../shared/platform.js";
+import type { Credential } from "../credentials/provider.js";
+import type { FieldFill } from "./fill.js";
 
 /**
  * What one platform's pages are.
@@ -26,4 +28,14 @@ export interface Pilot {
 	 * way. `status` is 0 where nothing has been loaded yet.
 	 */
 	stageOf(url: string, status: number): Stage;
+
+	/**
+	 * Where the login goes on that sign-in form.
+	 *
+	 * Two fields, and nothing that presses anything. A session that can publish
+	 * under someone's name without a second factor is the sensitive thing this
+	 * application holds, and it is not handed to a loop: the captcha and the
+	 * button stay with the person.
+	 */
+	signIn(credential: Credential): readonly FieldFill[];
 }

@@ -1,10 +1,15 @@
 import type { PlatformId } from "../../shared/platform.js";
 
+/**
+ * A login, and only a login.
+ *
+ * No one-time code, though the vault holds one: Pressroom fills two fields and
+ * stops, so a second factor read out of the vault would be a secret taken and
+ * never used. The person supplies it, along with the captcha and the button.
+ */
 export interface Credential {
 	readonly username: string;
 	readonly password: string;
-	/** Present only if the vault item carries a one-time-password seed. */
-	readonly totp?: string;
 }
 
 /**

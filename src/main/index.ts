@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
+import { BitwardenVault, bwCommand } from "./credentials/bitwarden.js";
 import { registerBrowserHandlers } from "./ipc/browser.js";
 import { registerVaultHandlers } from "./ipc/vault.js";
 import { keychainCipher } from "./settings/cipher.js";
@@ -16,7 +17,9 @@ void app.whenReady().then(() => {
 	// down rather than reached for from inside the store.
 	const settings = new SettingsStore(join(app.getPath("userData"), "settings.json"), keychainCipher());
 	registerVaultHandlers(settings);
-	registerBrowserHandlers();
+	// Bitwarden is asked for a login only when a session has died; what keeps
+	// the application signed in is the session itself.
+	registerBrowserHandlers(new BitwardenVault(bwCommand));
 	createMainWindow();
 
 	app.on("activate", () => {
