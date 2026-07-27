@@ -647,28 +647,24 @@ main {
 
 .note {
 	margin: 0;
-	padding: 0 16px 14px;
+	padding: 0 16px 16px;
+	max-width: 46em;
 	font-size: 12px;
 }
 
-/* The title runs long, so it takes its own line rather than pushing the two
-   short fields around it. */
+/* Labels in one column, values in another, aligned down the page. */
 .platform-fields {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-	gap: 12px 28px;
+	grid-template-columns: max-content minmax(0, 1fr);
+	gap: 7px 18px;
 	margin: 0;
-	padding: 0 16px 12px;
-}
-
-.platform-fields > :first-child {
-	grid-column: 1 / -1;
+	padding: 2px 16px 14px;
+	align-items: baseline;
 }
 
 .platform-fields dt {
-	margin-bottom: 2px;
 	color: var(--quiet);
-	font-size: 11px;
+	font-size: 12px;
 }
 
 .platform-fields dd {

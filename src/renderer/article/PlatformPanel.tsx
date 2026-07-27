@@ -38,23 +38,22 @@ export function PlatformPanel({
 		// The same box a document sits in, so the two read as one construct
 		// rather than as two that happen to show similar things.
 		<div className="document prepared">
+			{/* Label and value on one line each, aligned down the page: three
+			    fields laid out as blocks left a half-empty row beside the short
+			    ones and pushed the title against the label under it. */}
 			<dl className="platform-fields">
-				<div>
-					<dt>Title field</dt>
-					<dd>{result.rendered.title}</dd>
-				</div>
-				<div>
-					<dt>Hubs</dt>
-					<dd className={result.rendered.hubs.length === 0 ? "quiet" : ""}>
-						{result.rendered.hubs.length === 0 ? "chosen when publishing" : result.rendered.hubs.join(", ")}
-					</dd>
-				</div>
-				<div>
-					<dt>Tags</dt>
-					<dd className={result.rendered.tags.length === 0 ? "quiet" : ""}>
-						{result.rendered.tags.length === 0 ? "chosen when publishing" : result.rendered.tags.join(", ")}
-					</dd>
-				</div>
+				<dt>Title field</dt>
+				<dd>{result.rendered.title}</dd>
+
+				<dt>Hubs</dt>
+				<dd className={result.rendered.hubs.length === 0 ? "quiet" : ""}>
+					{result.rendered.hubs.length === 0 ? "chosen when publishing" : result.rendered.hubs.join(", ")}
+				</dd>
+
+				<dt>Tags</dt>
+				<dd className={result.rendered.tags.length === 0 ? "quiet" : ""}>
+					{result.rendered.tags.length === 0 ? "chosen when publishing" : result.rendered.tags.join(", ")}
+				</dd>
 			</dl>
 			<p className="quiet note">
 				Habr renders this only with Markdown mode switched on in its editor's settings, which has to be
