@@ -16,12 +16,6 @@ export function partitionFor(platform: PlatformId): string {
 	return `persist:${platform}`;
 }
 
-export const ALL_PARTITIONS: readonly PlatformId[] = [
-	"hackernoon",
-	"habr",
-	"hackernews",
-];
-
 /**
  * Electron's default user agent announces itself as Electron, which some login
  * flows treat differently from a browser. Present a plain one instead.
