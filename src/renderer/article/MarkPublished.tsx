@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
+import { recordable } from "./recordable.js";
 
 /**
  * Recording where an article went.
@@ -24,7 +25,7 @@ export function MarkPublished({
 	const [publishedAt, setPublishedAt] = useState(today);
 	const [busy, setBusy] = useState(false);
 
-	const usable = url.trim().startsWith("http");
+	const usable = recordable(url, publishedAt, today);
 
 	async function record() {
 		setBusy(true);
@@ -57,7 +58,20 @@ export function MarkPublished({
 			</label>
 			<label className="when">
 				<span className="field">Published</span>
-				<input value={publishedAt} onChange={(event) => setPublishedAt(event.target.value)} />
+				{/* A date field rather than a typed string: it opens a calendar, it
+				    rejects the 31st of February, and the value it yields is already
+				    the `YYYY-MM-DD` the record is written in. `max` is today —
+				    an article cannot have gone out tomorrow, and a mistyped year
+				    is otherwise silently recorded. */}
+				<input
+					type="date"
+					value={publishedAt}
+					max={today}
+					onChange={(event) => setPublishedAt(event.target.value)}
+					// The whole field opens the calendar; by default only the little
+					// indicator does, which is a target the size of a full stop.
+					onClick={(event) => event.currentTarget.showPicker()}
+				/>
 			</label>
 			<div className="actions">
 				<button type="button" className="btn small primary" disabled={!usable || busy} onClick={() => void record()}>

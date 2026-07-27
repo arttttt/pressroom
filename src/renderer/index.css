@@ -486,7 +486,8 @@ main {
 }
 
 .mark-published .when {
-	flex: 0 0 9em;
+	/* Room for the date and its calendar button, which a text field did not need. */
+	flex: 0 0 11em;
 }
 
 .mark-published input {
@@ -499,6 +500,24 @@ main {
 	font-family: var(--wire);
 	font-size: 12px;
 	box-sizing: border-box;
+	/* A date field's intrinsic height is not a text field's, and the two sit
+	   side by side — so both are held to the same one. */
+	height: 28px;
+}
+
+.mark-published input[type="date"] {
+	/* Chromium centres a date field's text differently from a text field's. */
+	line-height: normal;
+	cursor: default;
+}
+
+.mark-published input[type="date"]::-webkit-calendar-picker-indicator {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.mark-published input[type="date"]:hover::-webkit-calendar-picker-indicator {
+	opacity: 0.85;
 }
 
 .mark-published input:focus {
