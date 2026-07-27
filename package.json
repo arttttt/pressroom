@@ -17,8 +17,7 @@
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
-    "build:mac": "electron-vite build && electron-builder --mac --arm64",
-    "install:mac": "bash scripts/install-mac.sh"
+    "build:mac": "electron-vite build && electron-builder --mac --arm64"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

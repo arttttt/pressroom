@@ -1,9 +1,8 @@
-# How Pressroom becomes something you can drag into Applications.
+# How Pressroom becomes a disk image to drag into Applications.
 #
-# For one person on one Mac, so: no signing identity, no notarisation, no
-# update server. macOS therefore quarantines the first copy that arrives from
-# anywhere but the Finder — `pnpm run install:mac` clears that attribute on the
-# copy it installs, which is the whole reason that script exists.
+# For one person on one Mac: no developer certificate, no notarisation, no
+# update server. The one thing that cannot be skipped is a signature of some
+# kind — see scripts/adhoc-sign.cjs, which runs before the image is built.
 
 appId: com.arttttt.pressroom
 productName: Pressroom
@@ -12,6 +11,10 @@ copyright: © 2026 Artem Bambalov
 directories:
   buildResources: build
   output: release
+
+# Signed ad hoc once the bundle is packed and before the image wraps it, so
+# what the image contains is an application that launches.
+afterPack: scripts/adhoc-sign.cjs
 
 # Everything the application runs from, and nothing that built it. The renderer
 # is bundled whole, so no dependency ships at runtime — `out` and the manifest
@@ -28,10 +31,8 @@ mac:
   target:
     - target: dmg
       arch: [arm64]
-    - target: zip
-      arch: [arm64]
-  # Unsigned on purpose. A signing identity would need a paid developer
-  # account, and this never leaves the machine.
+  # No certificate: signing is done ad hoc by the hook above, which is all
+  # Apple Silicon needs to let a locally built application run.
   identity: null
   # The window is dark and the application draws its own title bar area.
   darkModeSupport: true
