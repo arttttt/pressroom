@@ -5,3 +5,6 @@ out/
 .DS_Store
 .env
 .env.*
+
+# electron-builder
+release/

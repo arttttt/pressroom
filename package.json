@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Semi-automatic publishing of long-form articles from an Obsidian vault",
+  "author": "Artem Bambalov",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -15,7 +16,9 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:mac": "electron-vite build && electron-builder --mac --arm64",
+    "install:mac": "bash scripts/install-mac.sh"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -31,6 +34,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "markdown-it": "^14.3.0",
     "react": "^19.2.8",

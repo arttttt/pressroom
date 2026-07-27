@@ -1,0 +1,53 @@
+<!--
+  Pressroom's mark: the desk itself.
+
+  The first screen is a matrix — rows are articles, columns are the places one
+  can go — and it carries state by shape as much as by colour: a filled square
+  is text ready to send, a hollow ring is nothing written in that language. The
+  icon is that vocabulary and nothing else, so it says what the application is
+  rather than decorating it.
+
+  Laid out to Apple's geometry: a 1024 canvas with the body inset 100 on every
+  side and the corner radius that gives the shape the dock expects.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+	<defs>
+		<linearGradient id="body" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#1c212b" />
+			<stop offset="1" stop-color="#0a0c11" />
+		</linearGradient>
+		<linearGradient id="rim" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#ffffff" stop-opacity="0.16" />
+			<stop offset="0.5" stop-color="#ffffff" stop-opacity="0.03" />
+			<stop offset="1" stop-color="#ffffff" stop-opacity="0.07" />
+		</linearGradient>
+	</defs>
+
+	<rect x="100" y="100" width="824" height="824" rx="186" fill="url(#body)" />
+	<rect x="103" y="103" width="818" height="818" rx="183" fill="none" stroke="url(#rim)" stroke-width="6" />
+
+	<!--
+	  Three articles down, three destinations across, and a diagonal of gaps —
+	  the state the desk exists to show: some of it has gone out, some of it has
+	  nowhere to go yet.
+	-->
+	<g fill="#7ba6ea">
+		<rect x="244" y="244" width="120" height="120" rx="30" />
+		<rect x="452" y="244" width="120" height="120" rx="30" />
+		<rect x="660" y="244" width="120" height="120" rx="30" />
+		<rect x="244" y="452" width="120" height="120" rx="30" />
+		<rect x="452" y="452" width="120" height="120" rx="30" />
+		<rect x="244" y="660" width="120" height="120" rx="30" />
+	</g>
+	<!--
+	  The rings have to survive being drawn at sixteen pixels, where a polite
+	  low-contrast outline turns into a dark smudge and the icon reads as six
+	  dots and some dirt. Heavier stroke, and only a little dimmer than the
+	  filled marks.
+	-->
+	<g fill="none" stroke="#7ba6ea" stroke-width="24" stroke-opacity="0.8">
+		<circle cx="720" cy="512" r="48" />
+		<circle cx="512" cy="720" r="48" />
+		<circle cx="720" cy="720" r="48" />
+	</g>
+</svg>
