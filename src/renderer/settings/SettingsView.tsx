@@ -47,11 +47,7 @@ export function SettingsView({ onBack }: { readonly onBack: () => void }) {
 		<section className="settings">
 			<Back onClick={onBack} />
 			<h1>The vault</h1>
-			<p className="quiet standfirst">
-				Pressroom reads articles through Obsidian's Local REST API plugin rather than off the disk, so
-				Obsidian stays the only thing writing to its own files. The key is the one in that plugin's
-				settings
-			</p>
+			<p className="quiet standfirst">The key from Obsidian's Local REST API plugin</p>
 
 			<label>
 				<span className="field">Address</span>
@@ -68,11 +64,6 @@ export function SettingsView({ onBack }: { readonly onBack: () => void }) {
 					spellCheck={false}
 				/>
 			</label>
-			<p className="quiet hint">
-				{settings.hasApiKey
-					? "Encrypted with a key held in the macOS Keychain, and never read back into this window"
-					: "It will be encrypted with a key held in the macOS Keychain"}
-			</p>
 
 			<div className="actions">
 				<button

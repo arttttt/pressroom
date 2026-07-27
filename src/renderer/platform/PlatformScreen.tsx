@@ -101,14 +101,6 @@ export function PlatformScreen({
 				</span>
 			</div>
 
-			{(stage === "sign-in-needed" || stage === "signing-in") && (
-				<p className="platform-note quiet">
-					{target.displayName} is asking who you are. Sign in here as you would in a browser —
-					the session stays on this machine and survives a restart, so this is asked once
-					every few months rather than every time
-				</p>
-			)}
-
 			{/* The hole. Empty on purpose: the platform's page is painted over it. */}
 			<div className="platform-page" ref={hole} />
 		</section>

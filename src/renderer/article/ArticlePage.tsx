@@ -98,8 +98,7 @@ export function ArticlePage({
 					<h1>{slug}</h1>
 					<p className="lead">Written as one note</p>
 					<p className="quiet">
-						Pressroom assembles an article from its section files. Split this one into a{" "}
-						<code>sections/</code> folder with an index naming them in order, and it will appear here
+						Split it into a <code>sections/</code> folder with an index naming them in order
 					</p>
 				</>
 			)}

@@ -66,7 +66,7 @@ export function DeskView({
 		return (
 			<div className="pad empty">
 				<h1>Nothing in the vault yet</h1>
-				<p className="quiet">A folder per article, a file per section. Pressroom picks them up from there</p>
+				<p className="quiet">A folder per article, a file per section</p>
 			</div>
 		);
 	}
@@ -77,8 +77,7 @@ export function DeskView({
 				<section>
 					<h1>Nothing is ready to send</h1>
 					<p className="quiet">
-						Pressroom assembles an article from its section files. Split one into a{" "}
-						<code>sections/</code> folder with an index naming them in order, and it appears here
+						Split one into a <code>sections/</code> folder with an index naming them in order
 					</p>
 				</section>
 			) : (

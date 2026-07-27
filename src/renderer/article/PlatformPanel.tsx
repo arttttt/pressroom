@@ -7,15 +7,15 @@ import { BodyViews } from "./BodyViews.js";
  * What each editor needs doing by hand, said where it is needed rather than
  * left to be remembered.
  */
-const NOTE: Readonly<Record<Rendered["platform"], string>> = {
-	habr: "Habr renders this only with Markdown mode switched on in its editor's settings, which has to be done before the text is pasted",
-	hackernoon:
-		"HackerNoon takes Markdown in Editor 3.0, and the story is submitted for review rather than published — so it goes out days later, and is worth recording here only once it does",
-	reddit: "Posted as a link, with the words below it as the first comment",
-	hackernews:
-		"A title and an address, and nothing else. Hacker News caps how long a title may be, so a long one is worth shortening by hand before it is submitted",
-	hackaday:
-		"Hackaday is a blog with editors rather than a place to publish: this goes to their tip line, and one of them decides whether to write about it",
+/**
+ * What has to be done by hand, and nothing else.
+ *
+ * Not an explanation of the platform: a step the person would otherwise miss.
+ * Anything that only reassures or describes has no business on the screen.
+ */
+const NOTE: Partial<Readonly<Record<Rendered["platform"], string>>> = {
+	habr: "Switch Markdown mode on in the editor's settings before pasting",
+	hackernews: "Hacker News caps the title length; shorten a long one by hand",
 };
 
 export function PlatformPanel({
@@ -51,7 +51,9 @@ export function PlatformPanel({
 			<dl className="platform-fields">
 				<Fields rendered={rendered} />
 			</dl>
-			<p className="quiet note">{NOTE[rendered.platform]}</p>
+			{NOTE[rendered.platform] !== undefined && (
+				<p className="quiet note">{NOTE[rendered.platform]}</p>
+			)}
 			{rendered.platform === "hackaday" ? (
 				<Email rendered={rendered} />
 			) : rendered.platform === "reddit" || rendered.platform === "hackernews" ? (
@@ -148,8 +150,7 @@ function Announcement({
 			{words === null ? (
 				rendered.platform === "reddit" && (
 					<p className="quiet inset">
-						No words written for Reddit yet. Add them in{" "}
-						<code>announcements/reddit.md</code> beside the article and they appear here
+						Write them in <code>announcements/reddit.md</code> beside the article
 					</p>
 				)
 			) : (

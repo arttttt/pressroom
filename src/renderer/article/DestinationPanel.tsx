@@ -47,9 +47,7 @@ export function DestinationPanel({
 			)}
 
 			{target.state === "missing" && (
-				<p className="quiet">
-					Nothing is written in {target.language}, so there is nothing to send here yet
-				</p>
+				<p className="quiet">Nothing written in {target.language}</p>
 			)}
 
 			{target.state !== "missing" &&
