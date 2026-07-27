@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { FillResult, PageState } from "../../shared/browser.js";
+import type { PageState } from "../../shared/browser.js";
 import type { Target } from "../../shared/platform.js";
 import { Back } from "../Back.js";
 
@@ -21,8 +21,6 @@ export function PlatformScreen({
 }) {
 	const hole = useRef<HTMLDivElement | null>(null);
 	const [page, setPage] = useState<PageState | null>(null);
-	const [filled, setFilled] = useState<FillResult | null>(null);
-	const [filling, setFilling] = useState(false);
 
 	// The page navigates on its own — a sign-in redirects, a save changes the
 	// address — so its state is pushed here rather than asked for.
@@ -57,20 +55,6 @@ export function PlatformScreen({
 		};
 	}, [target.platform]);
 
-	// What was put into a page belongs to that page. Once it has gone somewhere
-	// else, saying "filled the email and the password" is describing a form
-	// nobody is looking at any more.
-	useEffect(() => setFilled(null), [page?.url]);
-
-	async function signIn() {
-		setFilling(true);
-		try {
-			setFilled(await window.pressroom.signInTo(target.platform));
-		} finally {
-			setFilling(false);
-		}
-	}
-
 	const stage = page?.stage ?? "elsewhere";
 
 	return (
@@ -87,16 +71,6 @@ export function PlatformScreen({
 							onClick={() => void window.pressroom.navigatePlatform("sign-in")}
 						>
 							Sign in
-						</button>
-					)}
-					{stage === "signing-in" && (
-						<button
-							type="button"
-							className="btn small primary"
-							disabled={filling}
-							onClick={() => void signIn()}
-						>
-							{filling ? "Filling…" : "Fill in the login"}
 						</button>
 					)}
 					{stage === "elsewhere" && (
@@ -127,50 +101,16 @@ export function PlatformScreen({
 				</span>
 			</div>
 
-			{filled === null
-				? (stage === "sign-in-needed" || stage === "signing-in") && (
-						<p className="platform-note quiet">
-							{target.displayName} is asking who you are. The session stays on this machine
-							and survives a restart, so this is asked once — and the captcha and the button
-							are yours: Pressroom fills the two fields and stops
-						</p>
-					)
-				: <Filled result={filled} />}
+			{(stage === "sign-in-needed" || stage === "signing-in") && (
+				<p className="platform-note quiet">
+					{target.displayName} is asking who you are. Sign in here as you would in a browser —
+					the session stays on this machine and survives a restart, so this is asked once
+					every few months rather than every time
+				</p>
+			)}
 
 			{/* The hole. Empty on purpose: the platform's page is painted over it. */}
 			<div className="platform-page" ref={hole} />
 		</section>
 	);
-}
-
-/**
- * What went into the page, said plainly.
- *
- * A field that could not be found is the failure to expect — these selectors
- * describe someone else's form and it changes without warning — so it is named
- * rather than folded into "something went wrong".
- */
-function Filled({ result }: { readonly result: FillResult }) {
-	if (result.kind === "failed") {
-		return <p className="platform-note failed">{result.reason}</p>;
-	}
-	if (result.kind === "incomplete") {
-		return (
-			<p className="platform-note failed">
-				Filled {list(result.filled)}. Could not find {list(result.missing)} — the page is not
-				the one Pressroom was taught
-			</p>
-		);
-	}
-	return (
-		<p className="platform-note quiet">Filled {list(result.filled)}. The rest is yours</p>
-	);
-}
-
-/** "the email and the password", rather than a comma-separated list. */
-function list(names: readonly string[]): string {
-	if (names.length === 0) return "nothing";
-	return names.length === 1
-		? (names[0] ?? "")
-		: `${names.slice(0, -1).join(", ")} and ${names.at(-1) ?? ""}`;
 }

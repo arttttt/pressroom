@@ -24,7 +24,6 @@ const api: PressroomApi = {
 	movePlatform: (bounds) => ipcRenderer.invoke(IPC.movePlatform, bounds),
 	closePlatform: () => ipcRenderer.invoke(IPC.closePlatform),
 	navigatePlatform: (where) => ipcRenderer.invoke(IPC.navigatePlatform, where),
-	signInTo: (platform) => ipcRenderer.invoke(IPC.signInTo, platform),
 	onPlatformState: (listener) => {
 		// The listener is wrapped, so what is handed to `off` is the same
 		// function that was registered — otherwise the interface can subscribe
