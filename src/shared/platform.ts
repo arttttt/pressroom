@@ -61,6 +61,18 @@ export interface Platform {
  */
 export type TargetState = "published" | "ready" | "missing";
 
+/**
+ * A platform as the interface names it, and nothing about how it is reached.
+ *
+ * For the places that list the platforms themselves rather than an article's
+ * destinations — the help screen. Addresses stay in the main process.
+ */
+export interface PlatformSummary {
+	readonly id: PlatformId;
+	readonly displayName: string;
+	readonly language: "en" | "ru";
+}
+
 export interface Target {
 	readonly platform: PlatformId;
 	readonly displayName: string;

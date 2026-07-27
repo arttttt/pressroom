@@ -93,11 +93,19 @@ code {
 
 .chrome .link {
 	-webkit-app-region: no-drag;
-	margin-left: auto;
 	padding: 3px 2px;
 	border: 0;
 	background: none;
 	color: var(--quiet);
+}
+
+/* The first of them pushes the set to the right; the rest follow it. */
+.chrome .link:first-of-type {
+	margin-left: auto;
+}
+
+.chrome .link + .link {
+	margin-left: 18px;
 }
 
 .chrome .link:hover,
@@ -1146,6 +1154,69 @@ button:disabled {
 
 .result.bad {
 	color: light-dark(#8a5d17, #d3a25a);
+}
+
+/*
+ * The destinations, described. The one screen allowed to explain, so it reads
+ * as prose: a measure that stays comfortable, and no chips or rules competing
+ * with the text.
+ */
+
+.help {
+	max-width: 66ch;
+}
+
+.help h1 {
+	margin: 14px 0 0;
+	font-family: var(--editorial);
+	font-size: 26px;
+	font-weight: 500;
+	letter-spacing: -0.01em;
+}
+
+.help .about {
+	margin: 14px 0 34px;
+	color: var(--quiet);
+}
+
+.help .about p {
+	margin: 0 0 10px;
+}
+
+.help .guide {
+	padding-top: 22px;
+	border-top: 1px solid var(--edge);
+}
+
+.help .guide + .guide {
+	margin-top: 26px;
+}
+
+.help .guide header {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+}
+
+.help .guide h2 {
+	margin: 0;
+	font-family: var(--editorial);
+	font-size: 19px;
+	font-weight: 500;
+}
+
+.help .what {
+	margin: 8px 0 12px;
+}
+
+.help ul {
+	margin: 0;
+	padding-left: 18px;
+	color: var(--quiet);
+}
+
+.help li {
+	margin-bottom: 7px;
 }
 
 @media (prefers-reduced-motion: no-preference) {

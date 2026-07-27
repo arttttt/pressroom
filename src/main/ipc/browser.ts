@@ -1,8 +1,8 @@
 import { ipcMain, shell } from "electron";
-import { editorUrlFor } from "../../domain/platforms/registry.js";
+import { editorUrlFor, PLATFORMS } from "../../domain/platforms/registry.js";
 import { submissionUrlFor } from "../../domain/platforms/submission.js";
 import { IPC } from "../../shared/ipc.js";
-import type { PlatformId } from "../../shared/platform.js";
+import type { PlatformId, PlatformSummary } from "../../shared/platform.js";
 import type { SettingsStore } from "../settings/store.js";
 import { prepareFor } from "../vault/prepare.js";
 
@@ -38,5 +38,16 @@ export function registerBrowserHandlers(settings: SettingsStore): void {
 				prepared.kind === "rendered" ? submissionUrlFor(prepared.rendered) : editorUrlFor(platform),
 			);
 		},
+	);
+
+	ipcMain.handle(
+		IPC.listPlatforms,
+		(): readonly PlatformSummary[] =>
+			// Names and languages only. How each is reached stays here.
+			PLATFORMS.map((platform) => ({
+				id: platform.id,
+				displayName: platform.displayName,
+				language: platform.languages[0] ?? "en",
+			})),
 	);
 }

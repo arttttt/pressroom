@@ -1,7 +1,7 @@
 import type { ArticleResult } from "./article-result.js";
 import type { ArticleSummary } from "./article-summary.js";
 import type { Language } from "./article.js";
-import type { PlatformId } from "./platform.js";
+import type { PlatformId, PlatformSummary } from "./platform.js";
 import type { Publication } from "./publication.js";
 import type { RenderResult } from "./rendered.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "./settings.js";
@@ -21,6 +21,7 @@ export const IPC = {
 	recordPublication: "publications:record",
 	forgetPublication: "publications:forget",
 	openEditor: "platform:open-editor",
+	listPlatforms: "platform:list",
 } as const;
 
 /**
@@ -59,4 +60,6 @@ export interface PressroomApi {
 	 * the browser somewhere it was not built to go.
 	 */
 	openEditor(slug: string, platform: PlatformId): Promise<void>;
+	/** The platforms themselves, for the screen that describes them. */
+	listPlatforms(): Promise<readonly PlatformSummary[]>;
 }

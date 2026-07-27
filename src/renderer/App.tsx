@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Target } from "../shared/platform.js";
 import { ArticlePage } from "./article/ArticlePage.js";
 import { DeskView } from "./desk/DeskView.js";
+import { HelpView } from "./help/HelpView.js";
 import { SettingsView } from "./settings/SettingsView.js";
 
 type Screen =
@@ -9,7 +10,8 @@ type Screen =
 	// The desk has already worked out where this article can go, so it hands
 	// that over rather than making the article page ask again.
 	| { readonly name: "article"; readonly slug: string; readonly targets: readonly Target[] }
-	| { readonly name: "settings" };
+	| { readonly name: "settings" }
+	| { readonly name: "help" };
 
 export function App() {
 	const [screen, setScreen] = useState<Screen>({ name: "desk" });
@@ -30,6 +32,13 @@ export function App() {
 				<span className="wordmark">Pressroom</span>
 				<button
 					type="button"
+					className={screen.name === "help" ? "link current" : "link"}
+					onClick={() => setScreen({ name: "help" })}
+				>
+					The destinations
+				</button>
+				<button
+					type="button"
 					className={screen.name === "settings" ? "link current" : "link"}
 					onClick={() => setScreen({ name: "settings" })}
 				>
@@ -48,6 +57,7 @@ export function App() {
 					<ArticlePage slug={screen.slug} targets={screen.targets} onBack={desk} />
 				)}
 				{screen.name === "settings" && <SettingsView onBack={desk} />}
+				{screen.name === "help" && <HelpView onBack={desk} />}
 			</main>
 		</div>
 	);
