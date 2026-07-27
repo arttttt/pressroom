@@ -1,7 +1,6 @@
 import { ipcMain } from "electron";
 import { targetsFor } from "../../domain/platforms/targets.js";
 import { assembleMarkdown } from "../../domain/render/markdown.js";
-import { renderFor } from "../../domain/render/renderers.js";
 import { UnsupportedArticleLayout } from "../../domain/vault/reader.js";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { ArticleSummary } from "../../shared/article-summary.js";
@@ -13,6 +12,7 @@ import { IPC } from "../../shared/ipc.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "../../shared/settings.js";
 import { type SettingsStore, visible } from "../settings/store.js";
 import { connectToVault, forgetVaultConnection } from "../vault/connect.js";
+import { prepareFor } from "../vault/prepare.js";
 
 /**
  * The settings and the vault, as the interface sees them.
@@ -127,23 +127,8 @@ function registerPublications(settings: SettingsStore): void {
 function registerRender(settings: SettingsStore): void {
 	ipcMain.handle(
 		IPC.renderArticle,
-		async (_event, slug: string, platform: PlatformId): Promise<RenderResult> => {
-			try {
-				const { reader, registry } = await connectToVault(await settings.read());
-				const [article, published, announcement] = await Promise.all([
-					reader.readArticle(slug),
-					registry.list(slug),
-					reader.readAnnouncement(slug, platform),
-				]);
-				return renderFor(article, platform, published, announcement);
-			} catch (cause) {
-				if (cause instanceof UnsupportedArticleLayout) {
-					return { kind: "unsupported", platform, reason: cause.message };
-				}
-				forgetVaultConnection();
-				return { kind: "failed", reason: reason(cause) };
-			}
-		},
+		(_event, slug: string, platform: PlatformId): Promise<RenderResult> =>
+			prepareFor(settings, slug, platform),
 	);
 }
 
