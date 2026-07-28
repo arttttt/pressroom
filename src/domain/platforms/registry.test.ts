@@ -25,6 +25,17 @@ describe("PLATFORMS", () => {
 		}
 	});
 
+	it("says how each platform's editor takes text, so nobody has to guess", () => {
+		// It was guessed, in four places in the interface, each by a list of
+		// platform names that a sixth platform would not have been added to.
+		for (const platform of PLATFORMS) {
+			expect(["source", "document", "none"], platform.id).toContain(platform.paste);
+			// Nothing is pasted where the whole submission fits in the address.
+			if (platform.carries === "announcement") expect(platform.paste, platform.id).toBe("none");
+			else expect(platform.paste, platform.id).not.toBe("none");
+		}
+	});
+
 	it("names at least one language per platform, or nothing can be sent there", () => {
 		for (const platform of PLATFORMS) {
 			expect(platform.languages.length, platform.id).toBeGreaterThan(0);

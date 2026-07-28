@@ -11,6 +11,9 @@ export const PLATFORMS: readonly Platform[] = [
 		displayName: "HackerNoon",
 		delivery: { kind: "browser", editorUrl: "https://app.hackernoon.com/new" },
 		carries: "article",
+		// Editor 3.0 is ProseMirror: it guesses whether a paste is Markdown and,
+		// guessing wrong, lays the whole article out as one paragraph.
+		paste: "document",
 		languages: ["en"],
 	},
 	{
@@ -20,6 +23,9 @@ export const PLATFORMS: readonly Platform[] = [
 		// its author may publish at all. Habr's own pencil leads here.
 		delivery: { kind: "browser", editorUrl: "https://habr.com/ru/article/new/" },
 		carries: "article",
+		// Its editor is put into a Markdown mode by hand, and handing that a
+		// rendered document undoes the very thing the mode is for.
+		paste: "source",
 		languages: ["ru"],
 	},
 	{
@@ -30,6 +36,8 @@ export const PLATFORMS: readonly Platform[] = [
 		// as parameters, which is the same door the others go through.
 		delivery: { kind: "browser", editorUrl: "https://www.reddit.com/submit" },
 		carries: "announcement",
+		// The submission travels in the address; the comment is posted after.
+		paste: "none",
 		languages: ["en"],
 	},
 	{
@@ -37,6 +45,7 @@ export const PLATFORMS: readonly Platform[] = [
 		displayName: "Hacker News",
 		delivery: { kind: "browser", editorUrl: "https://news.ycombinator.com/submit" },
 		carries: "announcement",
+		paste: "none",
 		languages: ["en"],
 	},
 	{
@@ -44,6 +53,8 @@ export const PLATFORMS: readonly Platform[] = [
 		displayName: "Hackaday",
 		delivery: { kind: "email", to: "tips@hackaday.com" },
 		carries: "announcement",
+		// The whole tip is the mail message, subject and body and all.
+		paste: "none",
 		languages: ["en"],
 	},
 ];

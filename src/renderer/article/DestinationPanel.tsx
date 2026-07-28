@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
-import { bodyFlavours } from "./clipboard.js";
 import { MarkPublished } from "./MarkPublished.js";
 import { PlatformPanel } from "./PlatformPanel.js";
+import { carriesText, sendTo } from "./sending.js";
 
 const HOW = {
 	browser: "pasted into its editor",
@@ -91,7 +91,7 @@ export function DestinationPanel({
 				) : (
 					<div className="actions">
 						{rendered !== null && (
-							<Open slug={slug} rendered={rendered} displayName={target.displayName} />
+							<Open slug={slug} target={target} rendered={rendered} />
 						)}
 						{target.state === "ready" && (
 							<button type="button" className="btn small" onClick={() => setMarking(true)}>
@@ -101,7 +101,7 @@ export function DestinationPanel({
 					</div>
 				))}
 
-			{target.state !== "missing" && result !== null && <PlatformPanel result={result} />}
+			{target.state !== "missing" && result !== null && <PlatformPanel result={result} paste={target.paste} />}
 		</section>
 	);
 }
@@ -118,28 +118,33 @@ export function DestinationPanel({
  */
 function Open({
 	slug,
+	target,
 	rendered,
-	displayName,
 }: {
 	readonly slug: string;
+	readonly target: Target;
 	readonly rendered: Rendered;
-	readonly displayName: string;
 }) {
+	const [failed, setFailed] = useState(false);
 	// Hackaday's tip is a mail message, and the panel below opens it in Mail.
-	if (rendered.platform === "hackaday") return null;
-	const carriesText = rendered.platform === "habr" || rendered.platform === "hackernoon";
+	if (target.delivery === "email") return null;
 
 	async function open() {
-		if (carriesText) {
-			const { text, html } = bodyFlavours(rendered);
-			await (html === null ? window.pressroom.copy(text) : window.pressroom.copy(text, html));
+		try {
+			await sendTo(slug, target, rendered);
+			setFailed(false);
+		} catch {
+			setFailed(true);
 		}
-		await window.pressroom.openEditor(slug, rendered.platform);
 	}
 
 	return (
 		<button type="button" className="btn small primary" onClick={() => void open()}>
-			{carriesText ? `Open ${displayName} and copy the text` : `Open ${displayName}`}
+			{failed
+				? `Could not open ${target.displayName}`
+				: carriesText(target)
+					? `Open ${target.displayName} and copy the text`
+					: `Open ${target.displayName}`}
 		</button>
 	);
 }

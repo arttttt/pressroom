@@ -38,11 +38,27 @@ export type Delivery =
  */
 export type Carries = "article" | "announcement";
 
+/**
+ * How the platform's editor takes text that will not fit in an address.
+ *
+ * `source` wants the Markdown itself — Habr, whose editor is put into a
+ * Markdown mode by hand. `document` wants it rendered: HackerNoon's editor
+ * guesses whether a paste is Markdown and, guessing wrong, lays the whole
+ * article out as one paragraph. `none` is for the platforms whose whole
+ * submission travels in the address, so nothing is left to paste.
+ *
+ * A field rather than a list of platform names in the interface. It was the
+ * latter, in four places, each of which would have gone on quietly answering
+ * for a sixth platform that had never been added to it.
+ */
+export type Paste = "source" | "document" | "none";
+
 export interface Platform {
 	readonly id: PlatformId;
 	readonly displayName: string;
 	readonly delivery: Delivery;
 	readonly carries: Carries;
+	readonly paste: Paste;
 	/** Languages this platform is used for. */
 	readonly languages: readonly ("en" | "ru")[];
 }
@@ -78,6 +94,10 @@ export interface Target {
 	readonly displayName: string;
 	readonly language: "en" | "ru";
 	readonly delivery: Delivery["kind"];
+	/** Carried from the table, so the interface reads them rather than
+	    re-deciding which platforms are which. */
+	readonly carries: Carries;
+	readonly paste: Paste;
 	readonly state: TargetState;
 	/** Where it went, once it has gone. */
 	readonly url: string | null;

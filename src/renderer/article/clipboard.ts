@@ -1,23 +1,20 @@
+import type { Paste } from "../../shared/platform.js";
 import type { Rendered } from "../../shared/rendered.js";
 import { renderMarkdown } from "../preview/markdown.js";
 
 /**
- * What goes on the clipboard, and in what form.
+ * What goes on the clipboard for a platform's body, and in what form.
  *
- * A clipboard holds one thing in several forms at once, and an editor takes
- * the form it understands. That is the whole of the fix here, and it is per
- * platform because their editors want opposite things.
+ * A clipboard holds one thing in several forms at once and an editor takes the
+ * form it understands. Which form a platform wants is the platform table's to
+ * say — `paste` — not this file's: it used to switch on the platform's name,
+ * one of four places in the interface that re-decided the same thing and would
+ * each have gone on quietly answering for a platform never added to them.
  *
- * **HackerNoon gets HTML.** Its Editor 3.0 is ProseMirror, which sniffs
- * pasted text to decide whether it is Markdown and inserts it as one flat run
- * of characters when it decides wrong — headings arrive as literal `##` and
- * every line break collapses into a space. Observed, on a real paste. HTML
- * removes the guess: a heading is an `h2` and a fence is a `pre`, and there is
- * nothing left to sniff.
- *
- * **Habr gets Markdown and only Markdown.** Its editor is told to expect it,
- * in a mode switched on by hand, and handing that a rendered document would
- * undo the very thing the mode is for.
+ * The rendering itself stays here rather than in the domain because markdown-it
+ * is bundled into this half of the application and nothing ships beside the
+ * other half — a domain that imported it would be a packaged app that cannot
+ * start.
  */
 export interface Flavours {
 	readonly text: string;
@@ -25,17 +22,21 @@ export interface Flavours {
 	readonly html: string | null;
 }
 
-export function bodyFlavours(rendered: Rendered): Flavours {
+export function bodyFlavours(rendered: Rendered, paste: Paste): Flavours {
+	const text = bodyOf(rendered);
+	return { text, html: paste === "document" ? renderMarkdown(text).html : null };
+}
+
+/** The text a platform's editor is given, where it is given any. */
+function bodyOf(rendered: Rendered): string {
 	switch (rendered.platform) {
-		case "hackernoon":
-			return { text: rendered.body, html: renderMarkdown(rendered.body).html };
 		case "habr":
-			return { text: rendered.body, html: null };
-		case "reddit":
-			return { text: rendered.comment ?? "", html: null };
-		case "hackernews":
-			return { text: rendered.title, html: null };
+		case "hackernoon":
 		case "hackaday":
-			return { text: rendered.body, html: null };
+			return rendered.body;
+		case "reddit":
+			return rendered.comment ?? "";
+		case "hackernews":
+			return rendered.title;
 	}
 }

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { Paste } from "../../shared/platform.js";
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
 import { CopyButton } from "../CopyButton.js";
 import { BodyViews } from "./BodyViews.js";
@@ -15,13 +16,19 @@ const NOTE: Partial<Readonly<Record<Rendered["platform"], string>>> = {
 	hackernews: "Hacker News caps the title length; shorten a long one by hand",
 };
 
-export function PlatformPanel({ result }: { readonly result: RenderResult }) {
+export function PlatformPanel({
+	result,
+	paste,
+}: {
+	readonly result: RenderResult;
+	readonly paste: Paste;
+}) {
 	// Twenty thousand characters through markdown-it is not something to redo
 	// because a button was pressed, and pressing "Mark published" re-renders
 	// this panel. Before the early returns below, as the rules of hooks require.
 	const flavours = useMemo(
-		() => (result.kind === "rendered" ? bodyFlavours(result.rendered) : null),
-		[result],
+		() => (result.kind === "rendered" ? bodyFlavours(result.rendered, paste) : null),
+		[result, paste],
 	);
 
 	if (result.kind === "unsupported") return <p className="quiet">{result.reason}</p>;

@@ -25,6 +25,8 @@ export function targetsFor(
 				displayName: platform.displayName,
 				language,
 				delivery: platform.delivery.kind,
+				carries: platform.carries,
+				paste: platform.paste,
 				// Having gone out is the fact about a destination, whatever the
 				// text now says — an article can be edited after it is published.
 				state: out !== undefined ? "published" : written.includes(language) ? "ready" : "missing",
