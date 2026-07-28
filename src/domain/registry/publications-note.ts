@@ -189,13 +189,24 @@ function read(row: readonly string[]): Publication | null {
 	};
 }
 
+/**
+ * A row's cells, split on the bars that are actually separators.
+ *
+ * A bar inside a value is written `\|`, as Markdown's own tables require, and
+ * is not one. Unescaped, an address carrying `?q=a|b` came back as
+ * `?q=a` — and a date carrying one came back as three different fields.
+ */
 function cells(line: string): readonly string[] {
 	return line
-		.slice(1, line.endsWith("|") ? -1 : undefined)
-		.split("|")
-		.map((cell) => cell.trim());
+		.slice(1, endsWithSeparator(line) ? -1 : undefined)
+		.split(/(?<!\\)\|/)
+		.map((cell) => cell.trim().replace(/\\\|/g, "|"));
+}
+
+function endsWithSeparator(line: string): boolean {
+	return line.endsWith("|") && !line.endsWith("\\|");
 }
 
 function row(values: readonly string[]): string {
-	return `| ${values.join(" | ")} |`;
+	return `| ${values.map((value) => value.replace(/\|/g, "\\|")).join(" | ")} |`;
 }

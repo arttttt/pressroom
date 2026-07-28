@@ -176,3 +176,21 @@ describe("canonicalUrl", () => {
 		expect(canonicalUrl([HABR, HACKERNOON], "ru")).toBe(HABR.url);
 	});
 });
+
+describe("a value carrying the character the table is built from", () => {
+	it("survives the round trip", () => {
+		// An address with a bar in its query came back cut at the bar, and the
+		// announcement then pointed at a broken page.
+		const awkward: Publication = { ...HABR, url: "https://habr.com/a?q=a|b" };
+		const note = formatPublications("An Article", recordOf(awkward));
+		expect(parsePublications(note).publications[0]?.url).toBe(awkward.url);
+	});
+
+	it("does not let one turn a row into more fields than it has", () => {
+		const awkward: Publication = { ...HABR, publishedAt: "2026|07|27" };
+		const note = formatPublications("An Article", recordOf(awkward));
+		const read = parsePublications(note).publications[0];
+		expect(read?.publishedAt).toBe("2026|07|27");
+		expect(read?.url).toBe(HABR.url);
+	});
+});
