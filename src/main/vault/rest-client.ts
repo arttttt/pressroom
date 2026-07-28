@@ -2,6 +2,16 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 
 /**
+ * How long the plugin has to answer.
+ *
+ * Generous, because reading an article is many small requests and a busy
+ * Obsidian is slow rather than broken — but finite, because the interface asks
+ * again every ten seconds and a request that never settles is one more socket
+ * and one more promise held for the life of the process.
+ */
+const TIMEOUT = 15_000;
+
+/**
  * What reading the vault needs from the outside, and no more. Keeping it this
  * narrow is what lets the reader be exercised against a stub server rather than
  * against a running Obsidian.
@@ -19,6 +29,36 @@ export interface VaultHttp {
 	 * changed under an open editor or raced with the folder's syncing.
 	 */
 	writeFile(path: string, contents: string): Promise<void>;
+}
+
+/**
+ * Nothing is at that path — which for several things is the ordinary answer,
+ * not a failure: an article that has been nowhere has no `published.md`, and
+ * most articles have no announcement written for most platforms.
+ *
+ * It has to be its own type because the alternative was catching every error
+ * alike. That is how a plugin answering 500 came to mean "this article has
+ * been published nowhere", one keystroke before the whole record was rewritten
+ * from that emptiness.
+ */
+export class VaultPathMissing extends Error {
+	constructor(readonly path: string) {
+		super(`The vault has nothing at '${path}'.`);
+		this.name = "VaultPathMissing";
+	}
+}
+
+/**
+ * The plugin could not be reached, or could not be trusted.
+ *
+ * Distinct from an answer that merely says no: only this one means the
+ * connection itself is suspect and worth starting over, certificate and all.
+ */
+export class VaultUnreachable extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "VaultUnreachable";
+	}
 }
 
 export interface ObsidianRestConfig {
@@ -79,19 +119,36 @@ export class ObsidianRestClient implements VaultHttp {
 						...(payload === undefined ? {} : { "Content-Length": String(payload.byteLength) }),
 					},
 					...(this.config.certificate === undefined ? {} : { ca: this.config.certificate }),
+					// A plugin that accepts the connection and then says nothing
+					// would otherwise leave this promise pending for the life of
+					// the process — and the interface polls, so they accumulate.
+					timeout: TIMEOUT,
 				},
 				(response) => {
 					const chunks: Buffer[] = [];
 					response.on("data", (chunk: Buffer) => chunks.push(chunk));
+					// The connection can drop after the headers and before the
+					// body; unheard, that is an unhandled error in the main
+					// process rather than an answer the interface can show.
+					response.on("error", (cause: NodeJS.ErrnoException) =>
+						reject(new VaultUnreachable(describeTransport(cause, url))),
+					);
 					response.on("end", () => {
 						const body = Buffer.concat(chunks).toString("utf8");
 						const status = response.statusCode ?? 0;
 						if (status >= 200 && status < 300) resolve(body);
-						else reject(new Error(describeFailure(status, path, body)));
+						else if (status === 404) reject(new VaultPathMissing(path));
+						else reject(failureFor(status, path));
 					});
 				},
 			);
-			call.on("error", (cause: NodeJS.ErrnoException) => reject(new Error(describeTransport(cause, url))));
+			call.on("timeout", () => {
+				call.destroy();
+				reject(new VaultUnreachable(`${url.origin} accepted the request and did not answer.`));
+			});
+			call.on("error", (cause: NodeJS.ErrnoException) =>
+				reject(new VaultUnreachable(describeTransport(cause, url))),
+			);
 			call.end(payload);
 		});
 	}
@@ -109,16 +166,29 @@ export class ObsidianRestClient implements VaultHttp {
 export function fetchPluginCertificate(baseUrl: string): Promise<string> {
 	const url = new URL(`${baseUrl.replace(/\/$/, "")}/obsidian-local-rest-api.crt`);
 	return new Promise((resolve, reject) => {
-		const call = httpsRequest(url, { method: "GET", rejectUnauthorized: false }, (response) => {
-			const chunks: Buffer[] = [];
-			response.on("data", (chunk: Buffer) => chunks.push(chunk));
-			response.on("end", () => {
-				const status = response.statusCode ?? 0;
-				if (status >= 200 && status < 300) resolve(Buffer.concat(chunks).toString("utf8"));
-				else reject(new Error(`The plugin did not hand out its certificate (HTTP ${status}).`));
-			});
+		const call = httpsRequest(
+			url,
+			{ method: "GET", rejectUnauthorized: false, timeout: TIMEOUT },
+			(response) => {
+				const chunks: Buffer[] = [];
+				response.on("data", (chunk: Buffer) => chunks.push(chunk));
+				response.on("error", (cause: NodeJS.ErrnoException) =>
+					reject(new VaultUnreachable(describeTransport(cause, url))),
+				);
+				response.on("end", () => {
+					const status = response.statusCode ?? 0;
+					if (status >= 200 && status < 300) resolve(Buffer.concat(chunks).toString("utf8"));
+					else reject(new VaultUnreachable(`The plugin did not hand out its certificate (HTTP ${status}).`));
+				});
+			},
+		);
+		call.on("timeout", () => {
+			call.destroy();
+			reject(new VaultUnreachable(`${url.origin} accepted the request and did not answer.`));
 		});
-		call.on("error", (cause: NodeJS.ErrnoException) => reject(new Error(describeTransport(cause, url))));
+		call.on("error", (cause: NodeJS.ErrnoException) =>
+			reject(new VaultUnreachable(describeTransport(cause, url))),
+		);
 		call.end();
 	});
 }
@@ -130,12 +200,21 @@ function encodePath(path: string): string {
 		.join("/");
 }
 
-function describeFailure(status: number, path: string, body: string): string {
-	if (status === 401) {
-		return "The plugin rejected the API key. Check the key in Obsidian's Local REST API settings.";
+/**
+ * What an answer that is not a success means.
+ *
+ * The plugin's own error body is deliberately not repeated: it is remote text,
+ * it lands in the interface and in any screenshot of it, and it has never
+ * carried anything the status and the path do not already say.
+ */
+function failureFor(status: number, path: string): Error {
+	if (status === 401 || status === 403) {
+		return new Error("The plugin rejected the API key. Check the key in Obsidian's Local REST API settings.");
 	}
-	if (status === 404) return `The vault has nothing at '${path}'.`;
-	return `The plugin answered ${status} for '${path}': ${body.slice(0, 200)}`;
+	// A plugin answering 5xx is a plugin in trouble, and the next attempt is
+	// worth making on a fresh connection.
+	if (status >= 500) return new VaultUnreachable(`The plugin answered ${status} for '${path}'.`);
+	return new Error(`The plugin answered ${status} for '${path}'.`);
 }
 
 function describeTransport(cause: NodeJS.ErrnoException, url: URL): string {

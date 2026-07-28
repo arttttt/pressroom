@@ -13,6 +13,7 @@ import { IPC } from "../../shared/ipc.js";
 import type { Settings, SettingsUpdate, VaultCheck } from "../../shared/settings.js";
 import { type SettingsStore, visible } from "../settings/store.js";
 import { connectToVault, forgetVaultConnection } from "../vault/connect.js";
+import { VaultUnreachable } from "../vault/rest-client.js";
 import { prepareFor } from "../vault/prepare.js";
 
 /**
@@ -40,7 +41,7 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 			const { reader } = await connectToVault(await settings.read());
 			return { kind: "reachable", articles: (await reader.listArticles()).length };
 		} catch (cause) {
-			forgetVaultConnection();
+			if (cause instanceof VaultUnreachable) forgetVaultConnection();
 			return { kind: "failed", reason: reason(cause) };
 		}
 	});
@@ -86,7 +87,7 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 			if (cause instanceof UnsupportedArticleLayout) {
 				return { kind: "unsupported", slug, reason: cause.message };
 			}
-			forgetVaultConnection();
+			if (cause instanceof VaultUnreachable) forgetVaultConnection();
 			return { kind: "failed", slug, reason: reason(cause) };
 		}
 	});
@@ -162,13 +163,16 @@ function reason(cause: unknown): string {
 }
 
 /**
- * Forgets the connection and lets the failure through.
+ * Lets the failure through, forgetting the connection first if the connection
+ * is what failed.
  *
- * Whatever the interface does next — and what it offers is to try again — will
- * then start from a fresh conversation with the plugin rather than from what
- * was cached before Obsidian went away.
+ * Only then. It was called for every failure, and a missing folder is a
+ * failure — so an article renamed in Obsidian dropped the pinned certificate,
+ * and the next poll fetched it again without verifying it. Twice every ten
+ * seconds, for as long as the article stayed on screen, rather than the once
+ * per run the pinning was written for.
  */
 function startOver(cause: unknown): never {
-	forgetVaultConnection();
+	if (cause instanceof VaultUnreachable) forgetVaultConnection();
 	throw cause;
 }

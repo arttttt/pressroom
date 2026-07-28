@@ -3,6 +3,7 @@ import type { PlatformId } from "../../shared/platform.js";
 import type { RenderResult } from "../../shared/rendered.js";
 import type { SettingsStore } from "../settings/store.js";
 import { connectToVault, forgetVaultConnection } from "../vault/connect.js";
+import { VaultUnreachable } from "../vault/rest-client.js";
 import { UnsupportedArticleLayout } from "../../domain/vault/reader.js";
 
 /**
@@ -33,9 +34,10 @@ export async function prepareFor(
 		if (cause instanceof UnsupportedArticleLayout) {
 			return { kind: "unsupported", platform, reason: cause.message };
 		}
-		// Anything else may well be a connection that has gone; the next attempt
-		// starts a fresh conversation with the plugin rather than reusing it.
-		forgetVaultConnection();
+		// Only a connection that has gone is worth starting over for; a missing
+		// file is an answer, and dropping the pinned certificate for it means
+		// fetching a new one unverified.
+		if (cause instanceof VaultUnreachable) forgetVaultConnection();
 		return { kind: "failed", reason: cause instanceof Error ? cause.message : String(cause) };
 	}
 }

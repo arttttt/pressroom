@@ -4,6 +4,8 @@ import {
 	canonicalUrl,
 	formatPublications,
 	parsePublications,
+	type PublicationRecord,
+	withoutPublication,
 	withPublication,
 } from "./publications-note.js";
 
@@ -15,6 +17,14 @@ const HABR: Publication = {
 	canonical: true,
 };
 
+const HACKERNOON: Publication = {
+	platform: "hackernoon",
+	language: "en",
+	url: "https://hackernoon.com/how-i-turned-a-oneplus-3t",
+	publishedAt: "2026-07-20",
+	canonical: true,
+};
+
 const REDDIT: Publication = {
 	platform: "reddit",
 	language: "en",
@@ -23,117 +33,146 @@ const REDDIT: Publication = {
 	canonical: false,
 };
 
+/** A record of nothing, which is what an unpublished article has. */
+const NOTHING: PublicationRecord = { publications: [], unreadable: [] };
+
+function recordOf(...publications: readonly Publication[]): PublicationRecord {
+	return { publications, unreadable: [] };
+}
+
 describe("parsePublications", () => {
 	it("reads back what it wrote", () => {
 		// The file is the record; a round trip that loses anything loses it for good.
-		expect(parsePublications(formatPublications("An Article", [HABR, REDDIT]))).toEqual([HABR, REDDIT]);
+		const note = formatPublications("An Article", recordOf(HABR, REDDIT));
+		expect(parsePublications(note)).toEqual(recordOf(HABR, REDDIT));
 	});
 
 	it("finds nothing in a note that has no table yet", () => {
-		expect(parsePublications("---\ntype: publications\n---\n\nNothing yet.\n")).toEqual([]);
+		expect(parsePublications("---\ntype: publications\n---\n\nNothing yet.\n")).toEqual(NOTHING);
 	});
 
-	it("skips a row someone mangled by hand instead of losing the rest", () => {
-		const note = formatPublications("An Article", [HABR, REDDIT]).replace(
+	it("keeps a row it cannot read instead of quietly dropping it", () => {
+		// Writing is a whole-file rewrite. A row skipped on the way in is a row
+		// deleted from the vault on the way out — so it is carried through.
+		const note = formatPublications("An Article", recordOf(HABR, REDDIT)).replace(
 			"| reddit | en |",
 			"| reddit | |",
 		);
-		expect(parsePublications(note).map((publication) => publication.platform)).toEqual(["habr"]);
+		const read = parsePublications(note);
+		expect(read.publications.map((publication) => publication.platform)).toEqual(["habr"]);
+		expect(read.unreadable).toEqual(["| reddit | | 2026-07-28 |  | https://reddit.com/r/selfhosted/comments/abc/ |"]);
 	});
 
-	it("ignores a row naming a platform Pressroom does not know", () => {
-		const note = formatPublications("An Article", [HABR]).replace("| habr |", "| livejournal |");
-		expect(parsePublications(note)).toEqual([]);
+	it("keeps a row naming a platform it does not know, which someone meant", () => {
+		const note = formatPublications("An Article", recordOf(HABR)).replace("| habr |", "| livejournal |");
+		const read = parsePublications(note);
+		expect(read.publications).toEqual([]);
+		expect(read.unreadable).toHaveLength(1);
 	});
 
-	it("ignores a row with no address, which records nothing", () => {
-		const note = formatPublications("An Article", [HABR]).replace(HABR.url, "");
-		expect(parsePublications(note)).toEqual([]);
+	it("writes an unreadable row back out, so recording never costs it", () => {
+		const note = formatPublications("An Article", recordOf(HABR)).replace("| habr |", "| livejournal |");
+		const kept = withPublication(parsePublications(note), REDDIT);
+		expect(formatPublications("An Article", kept)).toContain("| livejournal |");
+	});
+
+	it("ignores the table's own header and rule, which are not rows", () => {
+		expect(parsePublications(formatPublications("An Article", NOTHING)).unreadable).toEqual([]);
 	});
 });
 
 describe("withPublication", () => {
 	it("makes the first place an article goes out the canonical one", () => {
-		const added = withPublication([], { ...HABR, canonical: false });
-		expect(added[0]?.canonical).toBe(true);
+		const added = withPublication(NOTHING, { ...HABR, canonical: false });
+		expect(added.publications[0]?.canonical).toBe(true);
 	});
 
-	it("leaves a language's canonical alone when a second place takes that language", () => {
-		const second = { ...REDDIT, platform: "hackernoon" as const, url: "https://hackernoon.com/x" };
-		const list = withPublication([{ ...REDDIT, canonical: true }], second);
-		expect(list.find((publication) => publication.platform === "reddit")?.canonical).toBe(true);
-		expect(list.find((publication) => publication.platform === "hackernoon")?.canonical).toBe(false);
+	it("never lets a platform that only announces the article hold canonical", () => {
+		// A Reddit thread is a message about the article, not the article. It
+		// held canonical simply by being recorded first — and an announcement
+		// usually is, because HackerNoon publishes days after it is submitted.
+		const afterReddit = withPublication(NOTHING, REDDIT);
+		expect(afterReddit.publications[0]?.canonical).toBe(false);
+		expect(canonicalUrl(afterReddit.publications, "en")).toBeNull();
 	});
 
-	it("moves canonical rather than having two in one language, when one is asked for", () => {
-		// Exactly one address per language is the address its announcements use.
-		const english = { ...REDDIT, canonical: true };
-		const list = withPublication([english], {
-			platform: "hackernoon",
-			language: "en",
-			url: "https://hackernoon.com/x",
-			publishedAt: "2026-07-29",
-			canonical: true,
-		});
-		expect(list.filter((publication) => publication.canonical)).toHaveLength(1);
-		expect(list.find((publication) => publication.canonical)?.platform).toBe("hackernoon");
+	it("hands canonical to the article itself when it arrives later", () => {
+		const both = withPublication(withPublication(NOTHING, REDDIT), { ...HACKERNOON, canonical: false });
+		expect(canonicalUrl(both.publications, "en")).toBe(HACKERNOON.url);
 	});
 
-	it("corrects an address rather than recording the same place twice", () => {
+	it("strips canonical from an announcement row someone marked by hand", () => {
+		const meddled = recordOf({ ...REDDIT, canonical: true });
+		const settled = withPublication(meddled, HACKERNOON);
+		const reddit = settled.publications.find((entry) => entry.platform === "reddit");
+		expect(reddit?.canonical).toBe(false);
+	});
+
+	it("keeps one canonical per language, not one per article", () => {
+		// A Russian article is not the original of an English one.
+		const both = withPublication(withPublication(NOTHING, HABR), HACKERNOON);
+		expect(both.publications.filter((entry) => entry.canonical)).toHaveLength(2);
+		expect(canonicalUrl(both.publications, "ru")).toBe(HABR.url);
+		expect(canonicalUrl(both.publications, "en")).toBe(HACKERNOON.url);
+	});
+
+	it("replaces a row for the same platform and language rather than adding one", () => {
 		const corrected = { ...HABR, url: "https://habr.com/ru/articles/999999/" };
-		const list = withPublication([HABR], corrected);
-		expect(list).toHaveLength(1);
-		expect(list[0]?.url).toBe(corrected.url);
+		const after = withPublication(recordOf(HABR), corrected);
+		expect(after.publications).toHaveLength(1);
+		expect(after.publications[0]?.url).toBe(corrected.url);
+	});
+});
+
+describe("withoutPublication", () => {
+	it("takes the row away", () => {
+		const after = withoutPublication(recordOf(HABR, REDDIT), "reddit", "en");
+		expect(after.publications.map((entry) => entry.platform)).toEqual(["habr"]);
 	});
 
-	it("keeps one place per language, since a translation is its own publication", () => {
-		const english = { ...HABR, language: "en" as const, url: "https://habr.com/en/articles/1/" };
-		expect(withPublication([HABR], english)).toHaveLength(2);
+	it("hands canonical to what is left rather than leaving a language without one", () => {
+		// Taking down the story that held canonical must not silently leave the
+		// language published with nowhere for its announcements to point.
+		const both = withPublication(withPublication(NOTHING, HACKERNOON), {
+			...HABR,
+			language: "en",
+			platform: "habr",
+			url: "https://habr.com/en/articles/1/",
+		});
+		const after = withoutPublication(both, "hackernoon", "en");
+		expect(canonicalUrl(after.publications, "en")).toBe("https://habr.com/en/articles/1/");
 	});
 
-	it("gives each language its own canonical, not one for the article", () => {
-		// Pointing an English story at a Russian one as canonical tells a search
-		// engine they are the same page. They are not.
-		const english = { ...REDDIT, canonical: false };
-		const both = withPublication([HABR], english);
-		expect(both.filter((publication) => publication.canonical)).toHaveLength(2);
-		expect(both.find((publication) => publication.language === "ru")?.canonical).toBe(true);
-		expect(both.find((publication) => publication.language === "en")?.canonical).toBe(true);
-	});
-
-	it("moves canonical only within the language it was asked for", () => {
-		const secondEnglish = {
-			platform: "hackernoon" as const,
-			language: "en" as const,
-			url: "https://hackernoon.com/x",
-			publishedAt: "2026-07-29",
-			canonical: true,
-		};
-		const all = withPublication(withPublication([HABR], { ...REDDIT, canonical: true }), secondEnglish);
-		expect(all.find((publication) => publication.platform === "habr")?.canonical).toBe(true);
-		expect(all.find((publication) => publication.platform === "reddit")?.canonical).toBe(false);
-		expect(all.find((publication) => publication.platform === "hackernoon")?.canonical).toBe(true);
+	it("leaves the rows it does not understand alone", () => {
+		const record: PublicationRecord = { publications: [HABR], unreadable: ["| livejournal | ru |"] };
+		expect(withoutPublication(record, "habr", "ru").unreadable).toEqual(["| livejournal | ru |"]);
 	});
 });
 
 describe("canonicalUrl", () => {
-	it("gives the address a language's announcements will point at", () => {
-		expect(canonicalUrl([HABR, REDDIT], "ru")).toBe(HABR.url);
-	});
-
-	it("does not offer another language's address", () => {
-		// A Russian article on Habr is not the original of an English one.
-		expect(canonicalUrl([HABR], "en")).toBeNull();
-	});
-
-	it("leaves out a platform that is about to receive the article", () => {
-		// A story does not declare itself a copy of itself.
-		const english = { ...REDDIT, canonical: true };
-		expect(canonicalUrl([english], "en", "reddit")).toBeNull();
-		expect(canonicalUrl([english], "en")).toBe(english.url);
-	});
-
-	it("gives nothing while the language is still unpublished", () => {
+	it("answers with nothing until the article is out somewhere", () => {
 		expect(canonicalUrl([], "en")).toBeNull();
+	});
+
+	it("does not point a platform at itself", () => {
+		expect(canonicalUrl([HACKERNOON], "en", "hackernoon")).toBeNull();
+	});
+
+	it("falls through to another place the article is, rather than answering nothing", () => {
+		// An article on both Habr and HackerNoon in one language has somewhere
+		// to point from either of them.
+		const alsoHabr: Publication = { ...HABR, language: "en", url: "https://habr.com/en/articles/1/" };
+		const record = withPublication(withPublication(NOTHING, HACKERNOON), alsoHabr).publications;
+		expect(canonicalUrl(record, "en", "hackernoon")).toBe(alsoHabr.url);
+	});
+
+	it("never points an announcement at another announcement", () => {
+		// Reddit's post must point at the article, not at a Hacker News thread.
+		const hn: Publication = { ...REDDIT, platform: "hackernews", url: "https://news.ycombinator.com/item?id=1" };
+		expect(canonicalUrl([REDDIT, hn], "en", "reddit")).toBeNull();
+	});
+
+	it("keeps to the language asked for", () => {
+		expect(canonicalUrl([HABR, HACKERNOON], "ru")).toBe(HABR.url);
 	});
 });

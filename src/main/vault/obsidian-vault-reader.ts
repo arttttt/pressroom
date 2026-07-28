@@ -4,7 +4,7 @@ import { UnsupportedArticleLayout, type VaultReader } from "../../domain/vault/r
 import { parseSectionNote } from "../../domain/vault/section-note.js";
 import type { Article, ArticleDocument, Language, Section } from "../../shared/article.js";
 import type { PlatformId } from "../../shared/platform.js";
-import type { VaultHttp } from "./rest-client.js";
+import { type VaultHttp, VaultPathMissing } from "./rest-client.js";
 
 const LANGUAGES: readonly Language[] = ["en", "ru"];
 
@@ -55,9 +55,16 @@ export class ObsidianVaultReader implements VaultReader {
 	}
 
 	async readAnnouncement(slug: string, platform: PlatformId): Promise<Announcement | null> {
+		// Absent is the ordinary case; anything else is raised. Reporting a
+		// failed read as "the author wrote none" sends the article's own title
+		// to Hacker News in place of the headline they wrote for it, and says
+		// nothing about having done so.
 		const note = await this.http
 			.readFile(`${this.articles}/${slug}/${ANNOUNCEMENTS}/${platform}.md`)
-			.catch(() => null);
+			.catch((cause: unknown) => {
+				if (cause instanceof VaultPathMissing) return null;
+				throw cause;
+			});
 		return note === null ? null : parseAnnouncement(note);
 	}
 

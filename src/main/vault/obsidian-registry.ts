@@ -1,13 +1,15 @@
 import {
 	formatPublications,
 	parsePublications,
+	type PublicationRecord,
+	withoutPublication,
 	withPublication,
 } from "../../domain/registry/publications-note.js";
 import type { PublicationRegistry } from "../../domain/registry/registry.js";
 import type { Language } from "../../shared/article.js";
 import type { PlatformId } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
-import type { VaultHttp } from "./rest-client.js";
+import { type VaultHttp, VaultPathMissing } from "./rest-client.js";
 
 /** The vault folder the articles live under, as the reader has it. */
 const ARTICLES = "Статьи";
@@ -29,27 +31,43 @@ export class ObsidianPublicationRegistry implements PublicationRegistry {
 		private readonly articles: string = ARTICLES,
 	) {}
 
-	/**
-	 * An article that has been nowhere has no note, and that is not an error —
-	 * it is the ordinary state of everything not yet published.
-	 */
 	async list(slug: string): Promise<readonly Publication[]> {
-		const note = await this.http.readFile(this.pathFor(slug)).catch(() => null);
-		return note === null ? [] : parsePublications(note);
+		return (await this.read(slug)).publications;
 	}
 
 	async record(slug: string, publication: Publication): Promise<readonly Publication[]> {
-		const next = withPublication(await this.list(slug), publication);
-		await this.http.writeFile(this.pathFor(slug), formatPublications(slug, next));
-		return next;
+		return this.rewrite(slug, (record) => withPublication(record, publication));
 	}
 
 	async forget(slug: string, platform: PlatformId, language: Language): Promise<readonly Publication[]> {
-		const next = (await this.list(slug)).filter(
-			(publication) => publication.platform !== platform || publication.language !== language,
-		);
+		return this.rewrite(slug, (record) => withoutPublication(record, platform, language));
+	}
+
+	/**
+	 * Reads the note, or answers with an empty record if there is none.
+	 *
+	 * **Only** if there is none. Every other failure is raised, because writing
+	 * is a whole-file rewrite: treating a plugin that answered 500 as "this
+	 * article has been published nowhere" replaced the entire record with a
+	 * single row, and the interface then displayed the loss as if it were
+	 * correct.
+	 */
+	private async read(slug: string): Promise<PublicationRecord> {
+		const note = await this.http.readFile(this.pathFor(slug)).catch((cause: unknown) => {
+			if (cause instanceof VaultPathMissing) return null;
+			throw cause;
+		});
+		return note === null ? { publications: [], unreadable: [] } : parsePublications(note);
+	}
+
+	/** Read, change, write — the only shape either mutation has. */
+	private async rewrite(
+		slug: string,
+		change: (record: PublicationRecord) => PublicationRecord,
+	): Promise<readonly Publication[]> {
+		const next = change(await this.read(slug));
 		await this.http.writeFile(this.pathFor(slug), formatPublications(slug, next));
-		return next;
+		return next.publications;
 	}
 
 	private pathFor(slug: string): string {

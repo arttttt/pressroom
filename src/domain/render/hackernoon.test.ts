@@ -93,12 +93,27 @@ describe("renderFor, on the canonical address", () => {
 	});
 
 	it("points at the English original when there is one elsewhere", () => {
-		const elsewhere: Publication = { ...ON_A_BLOG, platform: "reddit" };
+		const elsewhere: Publication = {
+			...ON_A_BLOG,
+			platform: "habr",
+			url: "https://habr.com/en/articles/1/",
+		};
 		const result = renderFor(ARTICLE, "hackernoon", [elsewhere, ON_HABR]);
 		if (result.kind !== "rendered" || result.rendered.platform !== "hackernoon") {
 			throw new Error("expected a rendered HackerNoon article");
 		}
 		expect(result.rendered.firstSeenAt).toBe(elsewhere.url);
+	});
+
+	it("never points First Seen At at a place that only announced the article", () => {
+		// A Reddit thread is a message about the story, not the story. This
+		// field cannot be corrected once HackerNoon publishes.
+		const announced: Publication = { ...ON_A_BLOG, platform: "reddit", canonical: true };
+		const result = renderFor(ARTICLE, "hackernoon", [announced]);
+		if (result.kind !== "rendered" || result.rendered.platform !== "hackernoon") {
+			throw new Error("expected a rendered HackerNoon article");
+		}
+		expect(result.rendered.firstSeenAt).toBeNull();
 	});
 
 	it("still gives Habr the Russian document", () => {

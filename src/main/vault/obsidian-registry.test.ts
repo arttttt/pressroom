@@ -21,9 +21,12 @@ const HABR: Publication = {
 let files: Map<string, string>;
 let server: Server;
 let registry: ObsidianPublicationRegistry;
+/** A plugin in trouble: it answers, and what it answers is not the file. */
+let readsFail: boolean;
 
 beforeEach(() => {
 	files = new Map();
+	readsFail = false;
 });
 
 beforeAll(async () => {
@@ -43,6 +46,12 @@ beforeAll(async () => {
 				outgoing.writeHead(204);
 				outgoing.end();
 			});
+			return;
+		}
+
+		if (readsFail) {
+			outgoing.writeHead(500);
+			outgoing.end("Something went wrong");
 			return;
 		}
 
@@ -75,6 +84,46 @@ describe("ObsidianPublicationRegistry", () => {
 		expect(await registry.list(SLUG)).toEqual([]);
 	});
 
+	it("does not mistake a plugin in trouble for an article published nowhere", async () => {
+		// The whole record is rewritten from what was read. Reading "nothing"
+		// because the plugin answered 500 replaced four publications with one,
+		// and the interface showed the loss as though it were correct.
+		await registry.record(SLUG, HABR);
+		const before = files.get(NOTE);
+
+		readsFail = true;
+		await expect(
+			registry.record(SLUG, { ...HABR, platform: "hackernoon", language: "en", url: "https://h.com/1" }),
+		).rejects.toThrow();
+		expect(files.get(NOTE)).toBe(before);
+	});
+
+	it("says so rather than answering with an empty record", async () => {
+		await registry.record(SLUG, HABR);
+		readsFail = true;
+		await expect(registry.list(SLUG)).rejects.toThrow(/500/);
+	});
+
+	it("keeps a hand-written row it does not understand", async () => {
+		// The note is meant to be corrected in Obsidian, so it will hold rows
+		// this application cannot read. Recording must not delete them.
+		await registry.record(SLUG, HABR);
+		files.set(NOTE, `${files.get(NOTE) ?? ""}| livejournal | ru | 2020-01-01 | | https://lj.example/1 |\n`);
+
+		await registry.record(SLUG, {
+			platform: "hackernoon",
+			language: "en",
+			url: "https://hackernoon.com/1",
+			publishedAt: "2026-07-28",
+			canonical: false,
+		});
+
+		const note = files.get(NOTE) ?? "";
+		expect(note).toContain("| livejournal |");
+		expect(note).toContain(HABR.url);
+		expect(note).toContain("https://hackernoon.com/1");
+	});
+
 	it("writes the record into the vault beside the article", async () => {
 		await registry.record(SLUG, HABR);
 		expect(files.has(NOTE)).toBe(true);
@@ -102,9 +151,9 @@ describe("ObsidianPublicationRegistry", () => {
 	it("keeps the record when a second place is added", async () => {
 		await registry.record(SLUG, HABR);
 		const both = await registry.record(SLUG, {
-			platform: "reddit",
+			platform: "hackernoon",
 			language: "en",
-			url: "https://reddit.com/r/selfhosted/comments/abc/",
+			url: "https://hackernoon.com/how-i-turned-a-oneplus-3t",
 			publishedAt: "2026-07-28",
 			canonical: false,
 		});
