@@ -21,14 +21,12 @@ const HOW = {
 export function DestinationPanel({
 	slug,
 	target,
-	today,
 	revision,
 	onRecord,
 	onForget,
 }: {
 	readonly slug: string;
 	readonly target: Target;
-	readonly today: string;
 	/**
 	 * Bumped when the article's text has changed in the vault. What a platform
 	 * receives is made from that text, so it is prepared again — a panel
@@ -80,7 +78,6 @@ export function DestinationPanel({
 				(marking ? (
 					<MarkPublished
 						target={target}
-						today={today}
 						onRecord={async (publication) => {
 							await onRecord(publication);
 							setMarking(false);

@@ -16,7 +16,7 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "test": "vitest run",
+    "test": "TZ=Europe/Nicosia vitest run",
     "build:mac": "electron-vite build && electron-builder --mac --arm64"
   },
   "pnpm": {

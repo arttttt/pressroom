@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Rendered, RenderResult } from "../../shared/rendered.js";
 import { CopyButton } from "../CopyButton.js";
 import { BodyViews } from "./BodyViews.js";
@@ -15,6 +16,14 @@ const NOTE: Partial<Readonly<Record<Rendered["platform"], string>>> = {
 };
 
 export function PlatformPanel({ result }: { readonly result: RenderResult }) {
+	// Twenty thousand characters through markdown-it is not something to redo
+	// because a button was pressed, and pressing "Mark published" re-renders
+	// this panel. Before the early returns below, as the rules of hooks require.
+	const flavours = useMemo(
+		() => (result.kind === "rendered" ? bodyFlavours(result.rendered) : null),
+		[result],
+	);
+
 	if (result.kind === "unsupported") return <p className="quiet">{result.reason}</p>;
 	if (result.kind === "failed") return <p className="failed">{result.reason}</p>;
 
@@ -35,7 +44,7 @@ export function PlatformPanel({ result }: { readonly result: RenderResult }) {
 			) : rendered.platform === "reddit" || rendered.platform === "hackernews" ? (
 				<Announcement rendered={rendered} />
 			) : (
-				<BodyViews body={rendered.body} html={bodyFlavours(rendered).html} startHidden />
+				<BodyViews body={rendered.body} html={flavours?.html ?? null} startHidden />
 			)}
 		</div>
 	);

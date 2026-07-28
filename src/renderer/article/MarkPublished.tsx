@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
-import { recordable } from "./recordable.js";
+import { localDate, recordable } from "../../shared/recording.js";
 
 /**
  * Recording where an article went.
@@ -12,23 +12,28 @@ import { recordable } from "./recordable.js";
  */
 export function MarkPublished({
 	target,
-	today,
 	onRecord,
 	onCancel,
 }: {
 	readonly target: Target;
-	readonly today: string;
 	readonly onRecord: (publication: Publication) => Promise<void>;
 	readonly onCancel: () => void;
 }) {
+	// Read once, when the form opens, rather than threaded down from a page
+	// that may not have re-rendered since yesterday. It was, and a window left
+	// open past midnight capped the calendar at the day before — the article
+	// could not be recorded as published today at all.
+	const [today] = useState(() => localDate(new Date()));
 	const [url, setUrl] = useState("");
 	const [publishedAt, setPublishedAt] = useState(today);
 	const [busy, setBusy] = useState(false);
+	const [failed, setFailed] = useState<string | null>(null);
 
-	const usable = recordable(url, publishedAt, today);
+	const usable = recordable({ url, publishedAt }, today);
 
 	async function record() {
 		setBusy(true);
+		setFailed(null);
 		try {
 			await onRecord({
 				platform: target.platform,
@@ -39,12 +44,18 @@ export function MarkPublished({
 				// announcements point at; the record settles that, not this form.
 				canonical: false,
 			});
+		} catch (cause) {
+			// Writing goes to the vault through Obsidian, so it can fail. It
+			// used to fail in silence: the button came back to "Record", the
+			// form stayed open, and nothing had been written.
+			setFailed(cause instanceof Error ? cause.message : String(cause));
 		} finally {
 			setBusy(false);
 		}
 	}
 
 	return (
+		<>
 		<div className="mark-published">
 			<label>
 				<span className="field">Address on {target.displayName}</span>
@@ -82,5 +93,7 @@ export function MarkPublished({
 				</button>
 			</div>
 		</div>
+		{failed !== null && <p className="failed">{failed}</p>}
+		</>
 	);
 }

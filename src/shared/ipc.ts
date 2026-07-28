@@ -51,13 +51,16 @@ export interface PressroomApi {
 	renderArticle(slug: string, platform: PlatformId): Promise<RenderResult>;
 
 	listPublications(slug: string): Promise<readonly Publication[]>;
-	/** Answers with the record as it stands afterwards. */
-	recordPublication(slug: string, publication: Publication): Promise<readonly Publication[]>;
-	forgetPublication(
-		slug: string,
-		platform: PlatformId,
-		language: Language,
-	): Promise<readonly Publication[]>;
+	/**
+	 * Answers with the article as the desk knows it afterwards.
+	 *
+	 * Not with the publications alone: where a destination then stands depends
+	 * on what is written as well as on what is published, and the screen that
+	 * recomposed it from half of that could not say "nothing written in this
+	 * language" at all.
+	 */
+	recordPublication(slug: string, publication: Publication): Promise<ArticleSummary>;
+	forgetPublication(slug: string, platform: PlatformId, language: Language): Promise<ArticleSummary>;
 
 	/**
 	 * Opens that platform's submission in the browser the person already uses,

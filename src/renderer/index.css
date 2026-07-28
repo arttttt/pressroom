@@ -1172,8 +1172,18 @@ button:disabled {
 	margin-top: 18px;
 }
 
+.result.ok {
+	color: var(--done);
+}
+
 .result.bad {
 	color: light-dark(#8a5d17, #d3a25a);
+}
+
+/* A note set in from the text it belongs to. */
+.inset {
+	padding-left: 2px;
+	margin: 8px 0 0;
 }
 
 /*

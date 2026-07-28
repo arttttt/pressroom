@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArticleSummary } from "../../shared/article-summary.js";
 import type { Target } from "../../shared/platform.js";
 import { Destinations } from "../destinations/Destinations.js";
@@ -29,16 +29,23 @@ export function DeskView({
 	// attempt, and the alternative to asking again is restarting Pressroom.
 	const [attempt, setAttempt] = useState(0);
 
+	// The watch below can heal the screen while a retry is still in flight, and
+	// the retry — issued against the connection that was being torn down — then
+	// lands with a failure and puts "cannot reach the vault" back over an
+	// answer that had just arrived. Only the newest attempt may speak.
+	const newest = useRef(0);
+
 	useEffect(() => {
-		let listening = true;
+		newest.current += 1;
+		const mine = newest.current;
 		setDesk({ status: "loading" });
 		window.pressroom
 			.listArticles()
-			.then((articles) => listening && setDesk({ status: "ready", articles }))
-			.catch((cause: unknown) => listening && setDesk({ status: "failed", reason: message(cause) }));
-		return () => {
-			listening = false;
-		};
+			.then((articles) => mine === newest.current && setDesk({ status: "ready", articles }))
+			.catch(
+				(cause: unknown) =>
+					mine === newest.current && setDesk({ status: "failed", reason: message(cause) }),
+			);
 	}, [attempt]);
 
 	// An article gains a language while Obsidian is open beside this window.
@@ -46,15 +53,23 @@ export function DeskView({
 	// from rebuilding the list under the hand every ten seconds.
 	useWatch(
 		"desk",
-		() => window.pressroom.listArticles(),
-		(articles) =>
+		async () => {
+			// A watch answer is an attempt too, so that it and a retry cannot
+			// land out of order and put the older one on the screen.
+			newest.current += 1;
+			const mine = newest.current;
+			return { mine, articles: await window.pressroom.listArticles() };
+		},
+		({ mine, articles }) => {
+			if (mine !== newest.current) return;
 			setDesk((was) => {
 				// An answer arrived, so the vault is reachable — which heals a
 				// screen that was showing the failure from when it was not.
 				if (was.status !== "ready") return { status: "ready", articles };
 				const kept = unchanged(was.articles, articles);
 				return kept === was.articles ? was : { status: "ready", articles: kept };
-			}),
+			});
+		},
 	);
 
 	if (desk.status === "loading") return <p className="quiet pad">Reading the vault…</p>;

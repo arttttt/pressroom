@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Taking one piece of a prepared article away with you.
@@ -23,12 +23,26 @@ export function CopyButton({
 	readonly label?: string;
 	readonly primary?: boolean;
 }) {
-	const [copied, setCopied] = useState(false);
+	const [said, setSaid] = useState<"copied" | "failed" | null>(null);
+	const clearing = useRef<number | null>(null);
+
+	// One timer, not one per click: pressing twice used to leave the first
+	// still running, so "Copied" vanished early on the second.
+	useEffect(() => () => {
+		if (clearing.current !== null) window.clearTimeout(clearing.current);
+	}, []);
 
 	async function copy() {
-		await (html === null ? window.pressroom.copy(text) : window.pressroom.copy(text, html));
-		setCopied(true);
-		window.setTimeout(() => setCopied(false), 1600);
+		try {
+			await (html === null ? window.pressroom.copy(text) : window.pressroom.copy(text, html));
+			setSaid("copied");
+		} catch {
+			// Saying nothing left the label reading "Copy" and the person
+			// pasting whatever was on the clipboard before, believing it worked.
+			setSaid("failed");
+		}
+		if (clearing.current !== null) window.clearTimeout(clearing.current);
+		clearing.current = window.setTimeout(() => setSaid(null), 1600);
 	}
 
 	return (
@@ -37,7 +51,7 @@ export function CopyButton({
 			className={primary ? "btn small primary" : "btn small"}
 			onClick={() => void copy()}
 		>
-			{copied ? "Copied" : label}
+			{said === "copied" ? "Copied" : said === "failed" ? "Could not copy" : label}
 		</button>
 	);
 }

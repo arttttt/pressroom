@@ -7,7 +7,6 @@ import { unchanged, useWatch } from "../useWatch.js";
 import { ArticleAside, type Chosen } from "./ArticleAside.js";
 import { BodyViews } from "./BodyViews.js";
 import { DestinationPanel } from "./DestinationPanel.js";
-import { localDate } from "./today.js";
 
 /**
  * One article: its text, and every place it can go.
@@ -35,15 +34,20 @@ export function ArticlePage({
 	const [attempt, setAttempt] = useState(0);
 	const [revision, setRevision] = useState(0);
 
+	// Only the newest read may speak. A poll can answer while the first read is
+	// still in flight — and did, after "Try again", putting the older body back
+	// on screen beside destinations already prepared from the newer one.
+	const newest = useRef(0);
+
 	useEffect(() => {
-		let listening = true;
+		newest.current += 1;
+		const mine = newest.current;
 		setResult(null);
 		setChosen(null);
 		setHere(targets);
-		void window.pressroom.readArticle(slug).then((read) => listening && setResult(read));
-		return () => {
-			listening = false;
-		};
+		void window.pressroom.readArticle(slug).then((read) => {
+			if (mine === newest.current) setResult(read);
+		});
 	}, [slug, attempt, targets]);
 
 	// The article is being written in Obsidian while this page is open: a
@@ -59,31 +63,71 @@ export function ArticlePage({
 	const onScreen = useRef<ArticleResult | null>(null);
 	onScreen.current = result;
 
-	useWatch(slug, () => window.pressroom.readArticle(slug), (fresh) => {
-		if (onScreen.current !== null && JSON.stringify(onScreen.current) === JSON.stringify(fresh)) return;
-		setResult(fresh);
-		setRevision((count) => count + 1);
-	});
-
-	useWatch(slug, () => window.pressroom.readSummary(slug), (fresh) =>
-		setHere((was) => unchanged(was, fresh.targets)),
+	useWatch(
+		slug,
+		async () => {
+			newest.current += 1;
+			const mine = newest.current;
+			return { mine, fresh: await window.pressroom.readArticle(slug) };
+		},
+		({ mine, fresh }) => {
+			if (mine !== newest.current) return;
+			if (onScreen.current !== null && JSON.stringify(onScreen.current) === JSON.stringify(fresh)) return;
+			setResult(fresh);
+			setRevision((count) => count + 1);
+		},
 	);
 
-	/** The record decides what is canonical, so the answer replaces what we had. */
-	function applied(publications: readonly Publication[]): readonly Target[] {
-		return here.map((target) => {
-			const out = publications.find(
-				(publication) => publication.platform === target.platform && publication.language === target.language,
-			);
-			if (out !== undefined) return { ...target, state: "published" as const, url: out.url };
-			return target.state === "published" ? { ...target, state: "ready" as const, url: null } : target;
-		});
-	}
+	// Counts the writes this page has made. A poll started before a write
+	// answers with what the vault said before it, and blindly taking that
+	// answer made a publication recorded a moment ago disappear again — so an
+	// answer from before the last write is dropped rather than applied.
+	//
+	// Where a destination now stands is the vault's to say, not this page's. It
+	// used to recompute that here from the publications alone, which could not
+	// reach "nothing written in this language" at all: after Forget on a
+	// language since removed, the panel offered to mark it published beside a
+	// message saying there was nothing to send.
+	const wrote = useRef(0);
+
+	useWatch(
+		slug,
+		async () => ({ at: wrote.current, summary: await window.pressroom.readSummary(slug) }),
+		({ at, summary }) => {
+			if (at !== wrote.current) return;
+			setHere((was) => unchanged(was, summary.targets));
+		},
+	);
 
 	const documents = result?.kind === "ready" ? result.documents : [];
+
+	// What was chosen may have gone: the language folder being read is renamed
+	// in Obsidian, and the pane it fills empties with no explanation. A choice
+	// whose subject is no longer there is no choice.
+	const stillThere =
+		chosen === null
+			? null
+			: chosen.kind === "document"
+				? (documents.some((entry) => entry.language === chosen.language) ? chosen : null)
+				: (here.some(
+						(entry) =>
+							entry.platform === chosen.target.platform && entry.language === chosen.target.language,
+					)
+						? chosen
+						: null);
+
 	// The article's own language opens first: it is the thing itself, and every
-	// destination is a version of it.
-	const showing = chosen ?? (documents[0] === undefined ? null : { kind: "document" as const, language: documents[0].language });
+	// destination is a version of it. An article with no language folder yet has
+	// no text to open — it falls through to its destinations rather than
+	// rendering a page with nothing on it at all.
+	const first = documents[0];
+	const showing: Chosen | null =
+		stillThere ??
+		(first !== undefined
+			? { kind: "document", language: first.language }
+			: here[0] !== undefined
+				? { kind: "destination", target: here[0] }
+				: null);
 	const document = showing?.kind === "document" ? documents.find((entry) => entry.language === showing.language) : undefined;
 	const target = showing?.kind === "destination" ? here.find((entry) => entry.platform === showing.target.platform) : undefined;
 
@@ -130,20 +174,30 @@ export function ArticlePage({
 							{document !== undefined && <Document document={document} />}
 							{target !== undefined && (
 								<DestinationPanel
+									// Keyed by the destination, so choosing another builds a
+									// fresh panel. Without it React reused this one and a
+									// half-filled "Mark published" form carried over — the
+									// address typed for Habr, recorded against Hacker News.
+									key={`${target.platform}-${target.language}`}
 									slug={slug}
 									target={target}
 									revision={revision}
-									today={localDate(new Date())}
-									onRecord={async (publication) =>
-										setHere(applied(await window.pressroom.recordPublication(slug, publication)))
-									}
-									onForget={async (forgotten) =>
+									onRecord={async (publication) => {
+										wrote.current += 1;
+										setHere((await window.pressroom.recordPublication(slug, publication)).targets);
+									}}
+									onForget={async (forgotten) => {
+										wrote.current += 1;
 										setHere(
-											applied(
-												await window.pressroom.forgetPublication(slug, forgotten.platform, forgotten.language),
-											),
-										)
-									}
+											(
+												await window.pressroom.forgetPublication(
+													slug,
+													forgotten.platform,
+													forgotten.language,
+												)
+											).targets,
+										);
+									}}
 								/>
 							)}
 						</div>

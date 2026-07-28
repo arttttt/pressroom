@@ -21,7 +21,18 @@ export function App() {
 	// window is expected to do and what the visible control does too.
 	useEffect(() => {
 		if (screen.name === "desk") return;
-		const onKey = (event: KeyboardEvent) => event.key === "Escape" && desk();
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			// Not while something is being typed. Escape in the middle of the
+			// publication form used to unmount the whole page and take the
+			// address with it; the form has its own Cancel, which is what that
+			// key is reaching for.
+			const into = event.target;
+			if (into instanceof HTMLElement && into.closest("input, textarea, select, [contenteditable]")) {
+				return;
+			}
+			desk();
+		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [screen.name]);

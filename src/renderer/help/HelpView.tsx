@@ -32,7 +32,10 @@ export function HelpView({ onBack }: { readonly onBack: () => void }) {
 		<div className="help pad">
 			<Back onClick={onBack} />
 			<h1>
-				The five destinations
+				{/* Counted, not written down: the list is fetched precisely so
+				    that a platform cannot be added and forgotten, and a heading
+				    saying "five" would have made it false again. */}
+				{platforms.length === 0 ? "The destinations" : `The ${platforms.length} destinations`}
 				{/* Which build this is. The copy in /Applications and the one the
 				    checkout runs look identical from the outside. */}
 				{version !== "" && <span className="version">{version}</span>}

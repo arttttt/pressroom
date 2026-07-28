@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 import { targetsFor } from "../../domain/platforms/targets.js";
+import { localDate, recordable } from "../../shared/recording.js";
 import type { PublicationRegistry } from "../../domain/registry/registry.js";
 import { assembleMarkdown } from "../../domain/render/markdown.js";
 import { UnsupportedArticleLayout, type VaultReader } from "../../domain/vault/reader.js";
@@ -106,19 +107,28 @@ function registerPublications(settings: SettingsStore): void {
 		return registry.list(slug).catch(startOver);
 	});
 
+	// Both answer with the article as the desk knows it afterwards, rather than
+	// with the publications alone. Where a destination stands is decided in one
+	// place — `targetsFor`, which knows what is written as well as what is
+	// published — instead of being recomposed by the screen from half of that.
 	ipcMain.handle(
 		IPC.recordPublication,
-		async (_event, slug: string, publication: Publication): Promise<readonly Publication[]> => {
-			const { registry } = await connectToVault(await settings.read()).catch(startOver);
-			return registry.record(slug, publication).catch(startOver);
+		async (_event, slug: string, publication: Publication): Promise<ArticleSummary> => {
+			const { reader, registry } = await connectToVault(await settings.read()).catch(startOver);
+			if (!recordable(publication, localDate(new Date()))) {
+				throw new Error("A publication needs an address and the day it went out.");
+			}
+			await registry.record(slug, publication).catch(startOver);
+			return summarise(reader, registry, slug).catch(startOver);
 		},
 	);
 
 	ipcMain.handle(
 		IPC.forgetPublication,
-		async (_event, slug: string, platform: PlatformId, language: Language): Promise<readonly Publication[]> => {
-			const { registry } = await connectToVault(await settings.read()).catch(startOver);
-			return registry.forget(slug, platform, language).catch(startOver);
+		async (_event, slug: string, platform: PlatformId, language: Language): Promise<ArticleSummary> => {
+			const { reader, registry } = await connectToVault(await settings.read()).catch(startOver);
+			await registry.forget(slug, platform, language).catch(startOver);
+			return summarise(reader, registry, slug).catch(startOver);
 		},
 	);
 }
