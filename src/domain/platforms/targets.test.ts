@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Publication } from "../../shared/publication.js";
 import { PLATFORMS } from "./registry.js";
-import { publishedCount, readyCount, targetsFor } from "./targets.js";
+import { targetsFor } from "./targets.js";
 
 const ON_HABR: Publication = {
 	platform: "habr",
@@ -30,12 +30,12 @@ describe("targetsFor", () => {
 	});
 
 	it("leaves an article with no text at all with nothing ready", () => {
-		expect(readyCount(targetsFor([]))).toBe(0);
+		expect(targetsFor([]).every((target) => target.state === "missing")).toBe(true);
 	});
 
 	it("counts an English article's targets as every English platform", () => {
 		const english = PLATFORMS.filter((platform) => platform.languages.includes("en")).length;
-		expect(readyCount(targetsFor(["en"]))).toBe(english);
+		expect(targetsFor(["en"]).filter((target) => target.state === "ready")).toHaveLength(english);
 	});
 
 	it("carries the delivery kind, so the interface can say how each one is reached", () => {
@@ -59,8 +59,8 @@ describe("targetsFor", () => {
 
 	it("leaves the other destinations as they were", () => {
 		const targets = targetsFor(["en", "ru"], [ON_HABR]);
-		expect(publishedCount(targets)).toBe(1);
-		expect(readyCount(targets)).toBe(targets.length - 1);
+		expect(targets.filter((target) => target.state === "published")).toHaveLength(1);
+		expect(targets.filter((target) => target.state === "ready")).toHaveLength(targets.length - 1);
 	});
 
 	it("carries no address for a destination it has not gone to", () => {

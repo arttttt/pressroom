@@ -65,7 +65,11 @@ export function DestinationPanel({
 
 			{target.state === "published" && (
 				<div className="published-at">
-					<a href={target.url ?? "#"}>{target.url}</a>
+					{/* Never `#`: that resolves to this page's own address, which the
+					    window then opens in the browser as a `file:` link. */}
+					{target.url === null ? <span className="quiet">recorded without an address</span> : (
+						<a href={target.url}>{target.url}</a>
+					)}
 					<button type="button" className="btn small" onClick={() => void onForget(target)}>
 						Forget
 					</button>

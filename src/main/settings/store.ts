@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { DEFAULT_BASE_URL, type Settings, type SettingsUpdate } from "../../shared/settings.js";
 import type { SecretCipher } from "./cipher.js";
@@ -57,7 +57,13 @@ export class SettingsStore {
 		};
 
 		await mkdir(dirname(this.file), { recursive: true });
-		await writeFile(this.file, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+		// Written beside and moved into place, because a bare write truncates
+		// first: a crash between the two leaves an empty file, and a read
+		// landing in that window — the interface polls, so one will — reports
+		// the key as missing and the vault as unreachable.
+		const beside = `${this.file}.writing`;
+		await writeFile(beside, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+		await rename(beside, this.file);
 		return { baseUrl: update.baseUrl, apiKey };
 	}
 

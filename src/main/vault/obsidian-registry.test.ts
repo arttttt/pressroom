@@ -182,3 +182,11 @@ describe("ObsidianPublicationRegistry", () => {
 		expect(left.map((publication) => publication.platform)).toEqual(["habr"]);
 	});
 });
+
+describe("a request that would leave the vault", () => {
+	it("is refused rather than sent", async () => {
+		// `new URL` resolves `..` after the encoding, so this used to address
+		// the plugin's root instead of anything under /vault/.
+		await expect(registry.list("../../..")).rejects.toThrow(/outside the vault/);
+	});
+});

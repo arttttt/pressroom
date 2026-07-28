@@ -8,6 +8,28 @@ import { join } from "node:path";
 const RENDERER_DEV_URL = process.env["ELECTRON_RENDERER_URL"];
 
 /**
+ * The schemes a link may leave by.
+ *
+ * Everything a link in this window carries came out of the vault — an address
+ * recorded in `published.md`, which is a text file people edit by hand and sync
+ * between machines. Handing whatever it says to the operating system means
+ * `file:` opens a file and a registered scheme launches whatever claims it, on
+ * a click that looks like following a link. Three schemes are what an article's
+ * address can honestly be.
+ */
+const OUTWARD = new Set(["http:", "https:", "mailto:"]);
+
+function openOutside(address: string): void {
+	let scheme: string;
+	try {
+		scheme = new URL(address).protocol;
+	} catch {
+		return;
+	}
+	if (OUTWARD.has(scheme)) void shell.openExternal(address);
+}
+
+/**
  * The application's own window — the interface, not a platform's page.
  *
  * Platform editors get windows of their own later, each on its own persistent
@@ -35,7 +57,7 @@ export function createMainWindow(): BrowserWindow {
 	window.on("ready-to-show", () => window.show());
 
 	window.webContents.setWindowOpenHandler(({ url }) => {
-		void shell.openExternal(url);
+		openOutside(url);
 		return { action: "deny" };
 	});
 
@@ -45,7 +67,7 @@ export function createMainWindow(): BrowserWindow {
 	window.webContents.on("will-navigate", (event, url) => {
 		if (url === window.webContents.getURL()) return;
 		event.preventDefault();
-		void shell.openExternal(url);
+		openOutside(url);
 	});
 
 	if (RENDERER_DEV_URL === undefined) {

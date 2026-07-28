@@ -375,64 +375,6 @@ main {
 	margin-bottom: 14px;
 }
 
-/* Kept for the desk's compact rail. */
-
-.article-destinations {
-	margin: 22px 0 30px;
-	padding: 0;
-	list-style: none;
-	border-top: 1px solid var(--edge);
-}
-
-.article-destinations li {
-	border-bottom: 1px solid var(--edge);
-}
-
-/* The row states where the article stands with one platform; everything that
-   can be done about it lives inside, at the row it belongs to. */
-.article-destinations .row {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: 100%;
-	padding: 10px 2px;
-	border: 0;
-	background: none;
-	text-align: left;
-}
-
-.article-destinations .row:not(:disabled):hover .platform {
-	color: var(--blue);
-}
-
-.article-destinations .row:disabled {
-	opacity: 1;
-}
-
-.disclosure {
-	flex: none;
-	width: 6px;
-	height: 6px;
-	margin: -3px 4px 0 6px;
-	border-right: 1.5px solid var(--quiet);
-	border-bottom: 1.5px solid var(--quiet);
-	transform: rotate(45deg);
-}
-
-.row.open .disclosure {
-	margin-top: 2px;
-	transform: rotate(225deg);
-	border-color: var(--blue);
-}
-
-.opened {
-	padding: 2px 0 18px 22px;
-}
-
-.opened .actions {
-	margin-bottom: 14px;
-}
-
 .published-at {
 	display: flex;
 	align-items: center;
@@ -455,39 +397,6 @@ main {
 	padding-top: 14px;
 }
 
-.article-destinations .names {
-	display: inline-flex;
-	align-items: baseline;
-	gap: 10px;
-}
-
-.article-destinations .platform {
-	font-size: 13px;
-	min-width: 8.5em;
-}
-
-.article-destinations li.missing .platform,
-.article-destinations li.missing .how {
-	color: var(--quiet);
-}
-
-.article-destinations li.missing .lang {
-	color: var(--quiet);
-}
-
-.article-destinations .how {
-	margin-left: auto;
-	color: var(--quiet);
-}
-
-.article-destinations .where {
-	margin-left: auto;
-	color: var(--blue);
-	max-width: 34em;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
 
 /* Recording where it went, once it has gone. */
 
@@ -1071,8 +980,7 @@ a.btn {
 
 /* A field the width of the window is harder to read, not easier, so the
    measure sits on the input and the paragraphs — never on the screen. */
-.settings label,
-.settings .hint {
+.settings label {
 	max-width: 34em;
 }
 
@@ -1119,10 +1027,6 @@ a.btn {
 	border-color: var(--blue);
 }
 
-.hint {
-	margin: -6px 0 20px;
-	font-size: 12px;
-}
 
 .actions {
 	display: flex;

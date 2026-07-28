@@ -33,13 +33,3 @@ export function targetsFor(
 		}),
 	);
 }
-
-/** How many of an article's destinations have text waiting for them. */
-export function readyCount(targets: readonly Target[]): number {
-	return targets.filter((target) => target.state === "ready").length;
-}
-
-/** How many it has already gone out to. */
-export function publishedCount(targets: readonly Target[]): number {
-	return targets.filter((target) => target.state === "published").length;
-}

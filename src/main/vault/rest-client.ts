@@ -104,6 +104,16 @@ export class ObsidianRestClient implements VaultHttp {
 		headers: Readonly<Record<string, string>>,
 		body?: string,
 	): Promise<string> {
+		// Refused before the address is built, because `new URL` resolves `..`
+		// after the encoding — `encodeURIComponent("..")` is `".."` — so a slug
+		// climbing out of the vault would leave the `/vault/` prefix behind
+		// entirely. Nothing in the vault can produce one; a renderer asking for
+		// it is not asking for anything this application does.
+		if (path.split("/").includes("..")) {
+			// Rejected rather than thrown: `send` is not async, and a caller
+			// that wrote `.catch(…)` would not see a synchronous throw.
+			return Promise.reject(new Error(`'${path}' points outside the vault.`));
+		}
 		const url = new URL(`${this.config.baseUrl.replace(/\/$/, "")}/vault/${encodePath(path)}`);
 		const send = url.protocol === "https:" ? httpsRequest : httpRequest;
 		const payload = body === undefined ? undefined : Buffer.from(body, "utf8");
