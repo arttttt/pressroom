@@ -43,8 +43,11 @@ export class ObsidianVaultReader implements VaultReader {
 		return LANGUAGES.filter((language) => present.has(language));
 	}
 
-	async splitLanguages(slug: string): Promise<readonly Language[]> {
-		const languages = await this.availableLanguages(slug);
+	async splitLanguages(slug: string, among?: readonly Language[]): Promise<readonly Language[]> {
+		// The caller usually knows which languages there are, having just asked.
+		// Listing the article's folder again for every article on the desk, on
+		// every poll, doubled the requests for an answer already in hand.
+		const languages = among ?? (await this.availableLanguages(slug));
 		const split = await Promise.all(
 			languages.map(async (language) => {
 				const entries = await this.http.listDirectory(`${this.articles}/${slug}/${language}/`);

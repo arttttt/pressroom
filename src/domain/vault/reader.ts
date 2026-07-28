@@ -57,7 +57,7 @@ export interface VaultReader {
 	 * everything in the vault can say which entries are ready without opening
 	 * each one.
 	 */
-	splitLanguages(slug: string): Promise<readonly Language[]>;
+	splitLanguages(slug: string, among?: readonly Language[]): Promise<readonly Language[]>;
 	/**
 	 * The author's words for announcing this article on one platform, from
 	 * `<article>/announcements/<platform>.md`, or nothing where none is written.

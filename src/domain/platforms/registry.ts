@@ -67,6 +67,21 @@ export const PLATFORMS: readonly Platform[] = [
  * paper over with a blank view. Everything that needs the address asks here,
  * so a platform that moves its editor is one line changed.
  */
+/**
+ * Where an email platform's message is addressed.
+ *
+ * Read from the table rather than written out again beside the renderer that
+ * builds the message, which is how the interface came to show one address next
+ * to a `mailto:` for another.
+ */
+export function emailAddressFor(platform: PlatformId): string {
+	const known = PLATFORMS.find((entry) => entry.id === platform);
+	if (known?.delivery.kind !== "email") {
+		throw new Error(`${known?.displayName ?? platform} is not reached by email.`);
+	}
+	return known.delivery.to;
+}
+
 export function editorUrlFor(platform: PlatformId): string {
 	const known = PLATFORMS.find((entry) => entry.id === platform);
 	if (known === undefined) throw new Error(`There is no platform called '${platform}'.`);

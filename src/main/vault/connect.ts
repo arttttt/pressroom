@@ -30,6 +30,11 @@ export async function connectToVault(settings: StoredSettings): Promise<Vault> {
 	}
 
 	const baseUrl = settings.baseUrl.replace(/\/$/, "");
+	if (!onThisMachine(baseUrl)) {
+		throw new Error(
+			`Pressroom only reaches a vault on this machine. '${settings.baseUrl}' is somewhere else.`,
+		);
+	}
 	const client = new ObsidianRestClient({
 		baseUrl,
 		apiKey: settings.apiKey,
@@ -48,6 +53,28 @@ export async function connectToVault(settings: StoredSettings): Promise<Vault> {
  */
 export function forgetVaultConnection(): void {
 	certificates.clear();
+}
+
+/**
+ * Whether the address is this machine's own.
+ *
+ * The certificate is fetched once **without verifying it**, and the only thing
+ * that makes that defensible is the plugin listening on the loopback
+ * interface: a request that never leaves the machine has no network to be
+ * intercepted on. Nothing enforced it — the field takes any address — so
+ * typing a hostname turned a stated safeguard into a sentence in a comment,
+ * and sent the API key there in clear text if the scheme was `http`.
+ */
+function onThisMachine(baseUrl: string): boolean {
+	let host: string;
+	try {
+		host = new URL(baseUrl).hostname;
+	} catch {
+		return false;
+	}
+	// The brackets survive on an IPv6 address.
+	const bare = host.replace(/^\[|\]$/g, "");
+	return bare === "127.0.0.1" || bare === "::1" || bare === "localhost";
 }
 
 function certificateFor(baseUrl: string): Promise<string> {

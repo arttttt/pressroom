@@ -155,11 +155,11 @@ async function summarise(
 	registry: PublicationRegistry,
 	slug: string,
 ): Promise<ArticleSummary> {
-	const [present, ready, published] = await Promise.all([
+	const [present, published] = await Promise.all([
 		reader.availableLanguages(slug),
-		reader.splitLanguages(slug),
 		registry.list(slug),
 	]);
+	const ready = await reader.splitLanguages(slug, present);
 	return {
 		slug,
 		ready,

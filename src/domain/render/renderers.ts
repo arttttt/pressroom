@@ -3,14 +3,13 @@ import type { Article } from "../../shared/article.js";
 import type { PlatformId } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
 import type { RenderResult } from "../../shared/rendered.js";
-import { PLATFORMS } from "../platforms/registry.js";
+import { emailAddressFor, PLATFORMS } from "../platforms/registry.js";
 import { canonicalUrl } from "../registry/publications-note.js";
 import { hackadayAnnouncer, hackerNewsAnnouncer, redditAnnouncer } from "./announcers.js";
 import { habrRenderer } from "./habr.js";
 import { hackerNoonRenderer } from "./hackernoon.js";
 import type { Renderer } from "./renderer.js";
 
-const HACKADAY_TIPS = "tips@hackaday.com";
 
 /** Every platform Pressroom can prepare an article for. */
 const RENDERERS: readonly Renderer[] = [
@@ -18,7 +17,7 @@ const RENDERERS: readonly Renderer[] = [
 	hackerNoonRenderer,
 	redditAnnouncer,
 	hackerNewsAnnouncer,
-	hackadayAnnouncer(HACKADAY_TIPS),
+	hackadayAnnouncer(emailAddressFor("hackaday")),
 ];
 
 export function rendererFor(platform: PlatformId): Renderer | null {

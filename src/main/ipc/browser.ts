@@ -1,5 +1,5 @@
 import { app, clipboard, ipcMain, shell } from "electron";
-import { editorUrlFor, PLATFORMS } from "../../domain/platforms/registry.js";
+import { PLATFORMS } from "../../domain/platforms/registry.js";
 import { submissionUrlFor } from "../../domain/platforms/submission.js";
 import { IPC } from "../../shared/ipc.js";
 import type { PlatformId, PlatformSummary } from "../../shared/platform.js";
@@ -32,11 +32,15 @@ export function registerBrowserHandlers(settings: SettingsStore): void {
 			// The same rendering the panel is showing, from the same function, so
 			// what opens can never be a different article from what was read.
 			const prepared = await prepareFor(settings, slug, platform);
-			// Nothing prepared still has an editor worth opening; the panel has
-			// already said why it is empty.
-			await shell.openExternal(
-				prepared.kind === "rendered" ? submissionUrlFor(prepared.rendered) : editorUrlFor(platform),
-			);
+			if (prepared.kind !== "rendered") {
+				// It used to fall back to the bare editor, which for Hackaday
+				// threw — the platform having none — and reached the interface as
+				// a rejected promise nobody was listening for. Whatever went
+				// wrong, the panel is showing it; opening a blank editor with a
+				// stale clipboard is not an improvement on saying so.
+				throw new Error(prepared.reason);
+			}
+			await shell.openExternal(submissionUrlFor(prepared.rendered));
 		},
 	);
 

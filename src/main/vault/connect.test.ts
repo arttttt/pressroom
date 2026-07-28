@@ -56,3 +56,20 @@ describe("connectToVault", () => {
 		expect(vault.registry).toBeDefined();
 	});
 });
+
+describe("where the vault may be", () => {
+	it("refuses an address that is not this machine's own", async () => {
+		// The certificate is fetched once without verifying it, and the only
+		// thing that makes that defensible is the request never leaving the
+		// machine. Nothing enforced it — the field takes any address.
+		await expect(
+			connectToVault({ baseUrl: "https://my-nas.local:27124", apiKey: "k" }),
+		).rejects.toThrow(/only reaches a vault on this machine/);
+	});
+
+	it("takes the addresses that are", async () => {
+		for (const baseUrl of ["http://127.0.0.1:27123", "http://localhost:27123", "http://[::1]:27123"]) {
+			await expect(connectToVault({ baseUrl, apiKey: "k" })).resolves.toBeDefined();
+		}
+	});
+});
