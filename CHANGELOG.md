@@ -7,6 +7,37 @@ two are told apart.
 
 Patch for a fix, minor for something new, while the first digit stays 0.
 
+## 0.2.0
+
+Everything a deep review turned up. Four of these could corrupt or lose work
+and none of them were visible without tracing the code.
+
+- **Choosing another destination with the "Mark published" form open kept the
+  address typed for the first one**, and recording wrote it against the second
+  — where every announcement then pointed.
+- **Any failed read of `published.md` erased the whole record.** The note is
+  rewritten in full from what reading understood, and reading turned every
+  error into "this article has been published nowhere". One 500 from the plugin
+  replaced four publications with one. Rows Pressroom cannot read — a platform
+  it does not know, a row corrected by hand — were deleted the same way, and
+  are now carried through untouched.
+- **A note saved on Windows had its code blocks rewritten.** Carriage returns
+  defeated fence detection outright, so `# ` inside a shell snippet became a
+  heading. The same characters lost a section's heading, after which the
+  article took that section's name from the file name.
+- **Canonical went to whichever place was recorded first**, which is usually an
+  announcement — so a Reddit thread became the article's canonical address and
+  landed in HackerNoon's "First Seen At", which cannot be corrected once the
+  story is out. Only a platform carrying the article can hold it now.
+- A wikilink carrying a path — which Obsidian writes on its own — broke the
+  whole article. Underlined headings are demoted and capped like any other. An
+  index that documents its own format no longer invents a section.
+- Recording and forgetting say when they fail instead of doing nothing in
+  silence; an article with no language folder shows its destinations instead of
+  an empty page; a window left open past midnight can still record today.
+- Links only leave by `http`, `https` and `mailto`. The vault must be on this
+  machine. Requests time out. Settings are written atomically.
+
 ## 0.1.0
 
 - Pressroom keeps up with the vault while you write in it. A section added to
