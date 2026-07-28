@@ -22,12 +22,19 @@ export function DestinationPanel({
 	slug,
 	target,
 	today,
+	revision,
 	onRecord,
 	onForget,
 }: {
 	readonly slug: string;
 	readonly target: Target;
 	readonly today: string;
+	/**
+	 * Bumped when the article's text has changed in the vault. What a platform
+	 * receives is made from that text, so it is prepared again — a panel
+	 * showing yesterday's paragraph is worse than one showing none.
+	 */
+	readonly revision: number;
 	readonly onRecord: (publication: Publication) => Promise<void>;
 	readonly onForget: (target: Target) => Promise<void>;
 }) {
@@ -36,14 +43,17 @@ export function DestinationPanel({
 
 	useEffect(() => {
 		let listening = true;
-		setResult(null);
 		void window.pressroom
 			.renderArticle(slug, target.platform)
 			.then((rendered) => listening && setResult(rendered));
 		return () => {
 			listening = false;
 		};
-	}, [slug, target.platform]);
+	}, [slug, target.platform, revision]);
+
+	// Cleared only when the destination itself changes, so a re-preparation
+	// after an edit replaces the panel rather than blanking it first.
+	useEffect(() => setResult(null), [slug, target.platform]);
 
 	const rendered = result?.kind === "rendered" ? result.rendered : null;
 

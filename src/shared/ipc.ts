@@ -15,6 +15,7 @@ export const IPC = {
 	saveSettings: "settings:save",
 	checkVault: "vault:check",
 	listArticles: "articles:list",
+	readSummary: "articles:summary",
 	readArticle: "articles:read",
 	renderArticle: "articles:render",
 	listPublications: "publications:list",
@@ -40,6 +41,11 @@ export interface PressroomApi {
 	/** Talks to the vault, which is the only way to know the settings are right. */
 	checkVault(): Promise<VaultCheck>;
 	listArticles(): Promise<readonly ArticleSummary[]>;
+	/**
+	 * One article as the desk knows it, for a screen watching that article
+	 * while it is edited in Obsidian. Costs folder listings, not a read.
+	 */
+	readSummary(slug: string): Promise<ArticleSummary>;
 	readArticle(slug: string): Promise<ArticleResult>;
 	/** The same article as one platform will be handed it. */
 	renderArticle(slug: string, platform: PlatformId): Promise<RenderResult>;

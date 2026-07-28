@@ -13,6 +13,7 @@ const api: PressroomApi = {
 	saveSettings: (update) => ipcRenderer.invoke(IPC.saveSettings, update),
 	checkVault: () => ipcRenderer.invoke(IPC.checkVault),
 	listArticles: () => ipcRenderer.invoke(IPC.listArticles),
+	readSummary: (slug) => ipcRenderer.invoke(IPC.readSummary, slug),
 	readArticle: (slug) => ipcRenderer.invoke(IPC.readArticle, slug),
 	renderArticle: (slug, platform) => ipcRenderer.invoke(IPC.renderArticle, slug, platform),
 	listPublications: (slug) => ipcRenderer.invoke(IPC.listPublications, slug),

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { Target } from "../../shared/platform.js";
 import type { Publication } from "../../shared/publication.js";
 import { Back } from "../Back.js";
+import { unchanged, useWatch } from "../useWatch.js";
 import { ArticleAside, type Chosen } from "./ArticleAside.js";
 import { BodyViews } from "./BodyViews.js";
 import { DestinationPanel } from "./DestinationPanel.js";
@@ -32,6 +33,7 @@ export function ArticlePage({
 	const [chosen, setChosen] = useState<Chosen | null>(null);
 	// Same reason as on the desk: Obsidian may have come back since.
 	const [attempt, setAttempt] = useState(0);
+	const [revision, setRevision] = useState(0);
 
 	useEffect(() => {
 		let listening = true;
@@ -43,6 +45,29 @@ export function ArticlePage({
 			listening = false;
 		};
 	}, [slug, attempt, targets]);
+
+	// The article is being written in Obsidian while this page is open: a
+	// section appears, a paragraph changes, a whole language appears. Both are
+	// watched — the text for what is shown, the summary for where it can now
+	// go, since a new language folder is a destination that has just become
+	// reachable.
+	//
+	// The revision counts the times the text actually changed, and is what
+	// tells each destination to prepare itself again: a panel showing what
+	// Habr will receive is wrong the moment a section is edited, and finding
+	// that out costs nothing beyond the read already being made here.
+	const onScreen = useRef<ArticleResult | null>(null);
+	onScreen.current = result;
+
+	useWatch(slug, () => window.pressroom.readArticle(slug), (fresh) => {
+		if (onScreen.current !== null && JSON.stringify(onScreen.current) === JSON.stringify(fresh)) return;
+		setResult(fresh);
+		setRevision((count) => count + 1);
+	});
+
+	useWatch(slug, () => window.pressroom.readSummary(slug), (fresh) =>
+		setHere((was) => unchanged(was, fresh.targets)),
+	);
 
 	/** The record decides what is canonical, so the answer replaces what we had. */
 	function applied(publications: readonly Publication[]): readonly Target[] {
@@ -107,6 +132,7 @@ export function ArticlePage({
 								<DestinationPanel
 									slug={slug}
 									target={target}
+									revision={revision}
 									today={localDate(new Date())}
 									onRecord={async (publication) =>
 										setHere(applied(await window.pressroom.recordPublication(slug, publication)))

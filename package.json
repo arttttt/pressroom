@@ -1,7 +1,7 @@
 {
   "name": "pressroom",
   "productName": "Pressroom",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "private": true,
   "description": "Semi-automatic publishing of long-form articles from an Obsidian vault",
   "author": "Artem Bambalov",

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { ArticleSummary } from "../../shared/article-summary.js";
 import type { Target } from "../../shared/platform.js";
 import { Destinations } from "../destinations/Destinations.js";
+import { unchanged, useWatch } from "../useWatch.js";
 
 type Desk =
 	| { readonly status: "loading" }
@@ -39,6 +40,22 @@ export function DeskView({
 			listening = false;
 		};
 	}, [attempt]);
+
+	// An article gains a language while Obsidian is open beside this window.
+	// Keeping the same object where nothing has changed is what stops a poll
+	// from rebuilding the list under the hand every ten seconds.
+	useWatch(
+		"desk",
+		() => window.pressroom.listArticles(),
+		(articles) =>
+			setDesk((was) => {
+				// An answer arrived, so the vault is reachable — which heals a
+				// screen that was showing the failure from when it was not.
+				if (was.status !== "ready") return { status: "ready", articles };
+				const kept = unchanged(was.articles, articles);
+				return kept === was.articles ? was : { status: "ready", articles: kept };
+			}),
+	);
 
 	if (desk.status === "loading") return <p className="quiet pad">Reading the vault…</p>;
 

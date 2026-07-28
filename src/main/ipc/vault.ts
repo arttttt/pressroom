@@ -1,7 +1,8 @@
 import { ipcMain } from "electron";
 import { targetsFor } from "../../domain/platforms/targets.js";
+import type { PublicationRegistry } from "../../domain/registry/registry.js";
 import { assembleMarkdown } from "../../domain/render/markdown.js";
-import { UnsupportedArticleLayout } from "../../domain/vault/reader.js";
+import { UnsupportedArticleLayout, type VaultReader } from "../../domain/vault/reader.js";
 import type { ArticleResult, AssembledDocument } from "../../shared/article-result.js";
 import type { ArticleSummary } from "../../shared/article-summary.js";
 import type { Language } from "../../shared/article.js";
@@ -47,21 +48,19 @@ export function registerVaultHandlers(settings: SettingsStore): void {
 	ipcMain.handle(IPC.listArticles, async (): Promise<readonly ArticleSummary[]> => {
 		const { reader, registry } = await connectToVault(await settings.read()).catch(startOver);
 		const slugs = await reader.listArticles().catch(startOver);
-		return Promise.all(
-			slugs.map(async (slug): Promise<ArticleSummary> => {
-				const [present, ready, published] = await Promise.all([
-					reader.availableLanguages(slug),
-					reader.splitLanguages(slug),
-					registry.list(slug),
-				]);
-				return {
-					slug,
-					ready,
-					unsplit: present.filter((language) => !ready.includes(language)),
-					targets: targetsFor(ready, published),
-				};
-			}),
-		);
+		return Promise.all(slugs.map((slug) => summarise(reader, registry, slug)));
+	});
+
+	/**
+	 * The same thing for one article.
+	 *
+	 * An article's own page needs it while it is open: a language folder
+	 * appearing in Obsidian adds a destination, and asking for the whole desk
+	 * to find that out is a request per article for an answer about one.
+	 */
+	ipcMain.handle(IPC.readSummary, async (_event, slug: string): Promise<ArticleSummary> => {
+		const { reader, registry } = await connectToVault(await settings.read()).catch(startOver);
+		return summarise(reader, registry, slug).catch(startOver);
 	});
 
 	ipcMain.handle(IPC.readArticle, async (_event, slug: string): Promise<ArticleResult> => {
@@ -130,6 +129,32 @@ function registerRender(settings: SettingsStore): void {
 		(_event, slug: string, platform: PlatformId): Promise<RenderResult> =>
 			prepareFor(settings, slug, platform),
 	);
+}
+
+/**
+ * One article as the desk knows it: which languages are ready, which are
+ * written but not split, and where it can still go.
+ *
+ * Costs folder listings rather than reading the article, which is what lets a
+ * screen ask again every few seconds without reading twenty thousand
+ * characters to learn that nothing has changed.
+ */
+async function summarise(
+	reader: VaultReader,
+	registry: PublicationRegistry,
+	slug: string,
+): Promise<ArticleSummary> {
+	const [present, ready, published] = await Promise.all([
+		reader.availableLanguages(slug),
+		reader.splitLanguages(slug),
+		registry.list(slug),
+	]);
+	return {
+		slug,
+		ready,
+		unsplit: present.filter((language) => !ready.includes(language)),
+		targets: targetsFor(ready, published),
+	};
 }
 
 function reason(cause: unknown): string {

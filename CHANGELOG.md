@@ -7,6 +7,17 @@ two are told apart.
 
 Patch for a fix, minor for something new, while the first digit stays 0.
 
+## 0.1.0
+
+- Pressroom keeps up with the vault while you write in it. A section added to
+  a translation, or a whole language folder appearing, shows up within ten
+  seconds instead of waiting for the screen to be reopened — and at once when
+  the window comes back to the front.
+- It only asks while the window is on screen; behind another window or
+  minimised, it asks nothing.
+- What a platform will receive is prepared again when the text behind it
+  changes, so the panel cannot show a paragraph that has been rewritten.
+
 ## 0.0.3
 
 - A destination an article has already gone to is green in the list. It was
