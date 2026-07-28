@@ -43,15 +43,28 @@ export function parseArticleIndex(text: string): ArticleIndex {
 
 	const entries: IndexEntry[] = [];
 	const seen = new Set<string>();
-	for (const match of body.matchAll(LINK)) {
-		const [, image, wikiTarget, wikiLabel, linkLabel, linkTarget] = match;
-		if (image !== undefined) continue;
+	for (const line of outsideFences(body)) {
+		for (const match of line.matchAll(LINK)) {
+			const [, image, wikiTarget, wikiLabel, linkLabel, linkTarget] = match;
+			if (image !== undefined) continue;
 
-		const id = wikiTarget !== undefined ? wikiTarget.trim() : sectionIdFrom(linkTarget);
-		if (id === null || id.length === 0 || seen.has(id)) continue;
-		seen.add(id);
+			// A wikilink is reduced the same way a Markdown link is. It was
+			// taken verbatim, so `[[sections/s0-intro]]` — which Obsidian
+			// writes as soon as a basename is ambiguous — became the id
+			// `sections/s0-intro` and the reader looked for the file under
+			// `sections/sections/`, failing the whole article.
+			const id = wikiTarget === undefined ? sectionIdFrom(linkTarget) : noteName(wikiTarget);
+			if (id === null || id.length === 0) continue;
 
-		entries.push({ id, label: cleaned(wikiTarget !== undefined ? wikiLabel : linkLabel) });
+			// Compared case-insensitively: the vault is on a case-insensitive
+			// disk, so `[[S0-Intro]]` and `[[s0-intro]]` are one file and must
+			// not both take a place in the reading order.
+			const already = id.toLowerCase();
+			if (seen.has(already)) continue;
+			seen.add(already);
+
+			entries.push({ id, label: cleaned(wikiTarget !== undefined ? wikiLabel : linkLabel) });
+		}
 	}
 
 	return { title: cleaned(fields.get("title")), entries };
@@ -67,12 +80,46 @@ export function parseArticleIndex(text: string): ArticleIndex {
 function sectionIdFrom(target: string | undefined): string | null {
 	if (target === undefined) return null;
 	if (target.includes("://") || target.startsWith("/") || target.startsWith("#")) return null;
+	// A link that climbs out of this article's folder points at somebody
+	// else's section; reduced to its basename it would silently resolve to a
+	// same-named section of this article and take a place in its reading order.
+	if (target.split("/").includes("..")) return null;
 
 	const withoutFragment = target.split("#")[0] ?? "";
 	if (!withoutFragment.toLowerCase().endsWith(".md")) return null;
+	return noteName(withoutFragment.slice(0, -".md".length));
+}
 
-	const name = withoutFragment.slice(0, -".md".length).split("/").pop() ?? "";
-	return decodeSafely(name).trim();
+/** The file's own name, without the folders above it or its extension. */
+function noteName(target: string): string {
+	const withoutFragment = (target.split("#")[0] ?? "").trim();
+	const name = withoutFragment.split("/").pop() ?? "";
+	return decodeSafely(name.toLowerCase().endsWith(".md") ? name.slice(0, -".md".length) : name).trim();
+}
+
+/**
+ * The index's lines, minus anything inside a fenced block.
+ *
+ * An index that documents its own format — a fenced example showing what a
+ * section link looks like — otherwise contributed a phantom section, and the
+ * reader then failed the whole article looking for a file nobody wrote.
+ */
+function outsideFences(body: string): readonly string[] {
+	const kept: string[] = [];
+	let openedWith: string | null = null;
+
+	for (const line of body.split("\n")) {
+		const fence = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+		if (fence === null) {
+			if (openedWith === null) kept.push(line);
+			continue;
+		}
+		const marker = fence[1] ?? "";
+		if (openedWith === null) openedWith = marker;
+		else if (marker[0] === openedWith[0] && marker.length >= openedWith.length) openedWith = null;
+	}
+
+	return kept;
 }
 
 /** Obsidian percent-encodes spaces in links; a malformed escape is left as written. */

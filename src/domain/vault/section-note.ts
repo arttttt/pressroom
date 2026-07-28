@@ -26,8 +26,13 @@ export function parseSectionNote(text: string): SectionNote {
 	const heading = TOP_HEADING.exec(lines[first] ?? "");
 	if (heading === null) return { heading: null, body: body.trim() };
 
+	// A heading line with nothing after it is not a heading anybody wrote on
+	// purpose. Answering with an empty string defeats the reader's fallback
+	// chain, which tests for absence and not for emptiness, and publishes a
+	// bare `##` into the article.
+	const written = (heading[1] ?? "").trim();
 	return {
-		heading: (heading[1] ?? "").trim(),
+		heading: written.length === 0 ? null : written,
 		body: lines.slice(first + 1).join("\n").trim(),
 	};
 }

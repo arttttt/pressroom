@@ -102,3 +102,60 @@ describe("assembleMarkdown", () => {
 		expect(assembleMarkdown({ language: "en", title: "Empty", sections: [] }).body).toBe("");
 	});
 });
+
+describe("text as it actually comes out of the vault", () => {
+	it("keeps a shell comment a comment when the note has Windows line endings", () => {
+		// The one that mattered: `\r` on every line made fence detection fail
+		// outright, so `# ` inside a snippet was rewritten as a heading — the
+		// exact corruption fence handling exists to prevent.
+		const note = "# Reproducing it\r\n\r\n```sh\r\n# flash the image\r\n./install.sh\r\n```";
+		const demoted = demoteHeadings(note);
+		expect(demoted).toContain("\n# flash the image");
+		expect(demoted).not.toContain("## flash the image");
+	});
+
+	it("reads a heading through a byte-order mark", () => {
+		expect(demoteHeadings("﻿# Title")).toContain("## Title");
+	});
+});
+
+describe("headings written with an underline", () => {
+	it("demotes one, instead of letting a level-one heading through", () => {
+		expect(demoteHeadings("Tailscale\n=========")).toBe("## Tailscale");
+		expect(demoteHeadings("Tailscale\n---------")).toBe("### Tailscale");
+	});
+
+	it("leaves a horizontal rule alone, which is the same characters", () => {
+		// A rule has no line of text directly above it; that is the difference.
+		expect(demoteHeadings("Prose.\n\n---\n\nMore.")).toBe("Prose.\n\n---\n\nMore.");
+	});
+
+	it("leaves an underline inside a code block alone", () => {
+		const note = "```\nOutput\n======\n```";
+		expect(demoteHeadings(note)).toBe(note);
+	});
+});
+
+describe("a fence that is not a fence", () => {
+	it("does not let a paragraph mentioning backticks open a block", () => {
+		// An info string may not contain a backtick, so this line is prose —
+		// and the heading after it must still be demoted.
+		expect(demoteHeadings("```a`b\n# Real")).toContain("## Real");
+	});
+});
+
+describe("a section that leaves a fence open", () => {
+	it("does not let it run on into the sections joined after it", () => {
+		const assembled = assembleMarkdown({
+			language: "en",
+			title: "T",
+			sections: [
+				{ id: "s0", heading: "Alpha", body: "```sh\necho hi" },
+				{ id: "s1", heading: "Beta", body: "#### Deep" },
+			],
+		});
+		// Beta's heading is outside any block, so capping can still reach it.
+		expect(capHeadings(assembled.body, 3)).toContain("### Deep");
+		expect(capHeadings(assembled.body, 3)).not.toContain("##### Deep");
+	});
+});

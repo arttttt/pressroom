@@ -43,3 +43,21 @@ describe("parseSectionNote", () => {
 		expect(parseSectionNote("#draft\n\nProse.").heading).toBeNull();
 	});
 });
+
+describe("a note as it comes off a synced disk", () => {
+	it("finds the heading through Windows line endings", () => {
+		// It came back null, and the article then took the section's name from
+		// the file stem — silently, and only for notes saved on Windows.
+		expect(parseSectionNote("# Reproducing it\r\n\r\nProse").heading).toBe("Reproducing it");
+	});
+
+	it("finds the heading through a byte-order mark", () => {
+		expect(parseSectionNote("﻿# Reproducing it\n\nProse").heading).toBe("Reproducing it");
+	});
+
+	it("treats a heading nobody has written yet as no heading", () => {
+		// An empty string defeats the reader's fallback chain, which tests for
+		// absence, and publishes a bare `##` into the article.
+		expect(parseSectionNote("# \n\nProse").heading).toBeNull();
+	});
+});

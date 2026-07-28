@@ -125,3 +125,39 @@ lang: ru
 		expect(parseArticleIndex(text).entries).toEqual([{ id: "s0-intro", label: "Wiki" }]);
 	});
 });
+
+describe("links Obsidian actually writes", () => {
+	it("reduces a wikilink carrying a path to the note's own name", () => {
+		// Obsidian writes the full path as soon as a basename is ambiguous, and
+		// every article here has an `s0-`. Taken verbatim the id became
+		// `sections/s0-introduction`, the reader looked under `sections/sections/`,
+		// and the whole article failed to open.
+		const index = parseArticleIndex("- [[sections/s0-introduction|Why an old phone]]");
+		expect(index.entries[0]?.id).toBe("s0-introduction");
+		expect(index.entries[0]?.label).toBe("Why an old phone");
+	});
+
+	it("drops the extension a wikilink sometimes carries", () => {
+		expect(parseArticleIndex("- [[s0-intro.md]]").entries[0]?.id).toBe("s0-intro");
+	});
+
+	it("treats one file named two ways as one section", () => {
+		// The vault sits on a case-insensitive disk, so these are one file.
+		const index = parseArticleIndex("- [[s0-intro]]\n- [[S0-Intro]]");
+		expect(index.entries).toHaveLength(1);
+	});
+
+	it("ignores a link that climbs out of this article", () => {
+		// Reduced to a basename it would resolve to this article's own section
+		// and take a place in its reading order.
+		const index = parseArticleIndex("See [the other piece](../another/sections/s0-introduction.md)");
+		expect(index.entries).toEqual([]);
+	});
+
+	it("ignores an example inside a fenced block", () => {
+		// An index that documents its own format contributed a phantom section,
+		// and the reader then failed the article looking for a file nobody wrote.
+		const index = parseArticleIndex("```md\n[[s9-example]]\n```\n\n- [[s0-intro]]");
+		expect(index.entries.map((entry) => entry.id)).toEqual(["s0-intro"]);
+	});
+});

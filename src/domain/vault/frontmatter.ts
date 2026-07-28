@@ -13,15 +13,22 @@ export interface Frontmatter {
 	readonly body: string;
 }
 
+import { normalise } from "./text.js";
+
 const DELIMITER = "---";
 
 export function splitFrontmatter(text: string): Frontmatter {
-	const lines = text.split("\n").map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line));
-	if (lines[0] !== DELIMITER) return { fields: new Map(), body: text };
+	// Normalised before anything looks at a line, and the body handed on is the
+	// normalised one. It used to strip carriage returns only on the path where
+	// frontmatter was found, so a note without any came back untouched and
+	// every pattern below it silently stopped matching.
+	const normalised = normalise(text);
+	const lines = normalised.split("\n");
+	if (lines[0] !== DELIMITER) return { fields: new Map(), body: normalised };
 
 	const closing = lines.indexOf(DELIMITER, 1);
 	// An unterminated block is not frontmatter; treat the text as it reads.
-	if (closing === -1) return { fields: new Map(), body: text };
+	if (closing === -1) return { fields: new Map(), body: normalised };
 
 	const fields = new Map<string, string>();
 	for (const line of lines.slice(1, closing)) {
